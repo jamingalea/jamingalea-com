@@ -304,6 +304,26 @@ async function addImage(file, kind, nameHint) {
   return { path, w, h: hgt };
 }
 
+/* ---------- empty image placeholder ---------- */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function imageIcon() {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'img-icon');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const [tag, attrs] of [
+    ['rect', { x: 3, y: 4.5, width: 18, height: 15, rx: 2.5 }],
+    ['circle', { cx: 8.75, cy: 9.75, r: 1.75 }],
+    ['path', { d: 'M3.5 17.5l5-5 4 4 2.5-2.5 5.5 5.5' }],
+  ]) {
+    const el = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+    svg.append(el);
+  }
+  return svg;
+}
+const imagePlaceholder = (cls) => h(`div.${cls}.img-empty`, { title: 'No image yet' }, imageIcon());
+
 /* ---------- field builders ---------- */
 function bind(obj, key, el, { onInput } = {}) {
   el.addEventListener('input', () => {
@@ -352,7 +372,8 @@ function imageField(label, obj, key, kind, opts = {}) {
   const upd = () => {
     const v = obj[key];
     pv.style.backgroundImage = v ? `url("${assetUrl(v)}")` : '';
-    pv.textContent = v ? '' : 'No image';
+    pv.replaceChildren(...(v ? [] : [imageIcon()]));
+    pv.title = v ? '' : 'No image yet';
     path.textContent = v ? (state.pending.has(v) ? 'New image (publish to upload)' : v) : '';
     removeBtn.hidden = !v || opts.required;
   };
@@ -399,7 +420,9 @@ function tagsField(list) {
 function card(item, { thumb, thumbIcon, noThumb, kind, title, subtitle, onMove, canUp, canDown, onDuplicate, onDelete, body, scrollId }) {
   const isOpen = state.open.has(item);
   const head = h('div.card__head', { role: 'button', tabindex: 0, 'aria-expanded': String(isOpen) },
-    !noThumb && h('img.card__thumb' + (thumbIcon ? '.card__thumb--icon' : ''), { src: thumb ? assetUrl(thumb) : 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', alt: '' }),
+    !noThumb && (thumb
+      ? h('img.card__thumb' + (thumbIcon ? '.card__thumb--icon' : ''), { src: assetUrl(thumb), alt: '' })
+      : imagePlaceholder('card__thumb')),
     kind && h('span.kind', kind),
     h('div.card__title', title || (kind ? '' : 'Untitled'), item.hidden && h('span.badge', 'Hidden'), subtitle && h('span.muted', subtitle)),
     h('div.card__tools',

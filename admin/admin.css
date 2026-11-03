@@ -108,6 +108,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .card.is-hidden .card__title{opacity:.5}
 .card__head{display:flex;align-items:center;gap:16px;padding:14px 14px 14px 16px;cursor:pointer}
 .card__thumb{width:60px;height:46px;border-radius:6px;object-fit:cover;background:var(--chip);flex:none}
+.img-empty{display:grid;place-items:center}
+.img-icon{width:22px;height:22px;fill:none;stroke:var(--muted);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.55}
+.imgfield__preview .img-icon{width:28px;height:28px}
 .card__thumb--icon{object-fit:contain;padding:6px;background:#1a1a1a}
 .card__title{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card__title .muted{font-weight:400;font-size:12px;display:block}
