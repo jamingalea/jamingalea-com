@@ -36,10 +36,6 @@ a:hover{opacity:.7}
 .hero__tagline,.hero__bio{color:var(--muted)}
 .hero__bio{width:33%}
 .hero__bio p+p{margin-top:var(--lh)}
-/* Hover scramble (site.js): hide the real letter, draw a random one over it */
-.ch{position:relative}
-.ch.is-scrambling{-webkit-text-fill-color:transparent}
-.ch.is-scrambling::after{content:attr(data-s);position:absolute;left:50%;top:0;transform:translateX(-50%);-webkit-text-fill-color:currentColor;pointer-events:none}
 
 /* Work: two columns, large on the left, small (square) on the right */
 .work{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
