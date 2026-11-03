@@ -42,7 +42,10 @@ a:hover{opacity:.7}
 .work__col{display:flex;flex-direction:column;gap:120px}
 .work__col--left{width:60%}
 .work__col--right{width:33%;margin-top:200px}
-.project__media{background:#222;overflow:hidden}
+.project__media{display:block;background:#222;overflow:hidden}
+a.project__media:hover{opacity:1}
+a.project__media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+a.project__media:hover img{transform:scale(1.02)}
 .project__media img{width:100%;height:100%;object-fit:cover}
 .work__col--left .project__media{aspect-ratio:1896/1456}
 .work__col--right .project__media{aspect-ratio:1}
@@ -105,6 +108,53 @@ a:hover{opacity:.7}
   .highlights{padding-top:80px}
   .highlights .section-title{margin-bottom:30px}
   .footer{padding:80px var(--gutter)}
+}
+
+/* ---------- Case study pages ----------
+   A deliberately plain starting layout, ready to be restyled.
+   Structure: .cs-nav, .cs-head (title, summary, .cs-meta), .cs-hero,
+   then blocks: .cs-text, .cs-image, .cs-gallery, .cs-quote, .cs-stats, and .cs-next. */
+.cs-nav{padding:40px var(--gutter)}
+.cs main{padding:0 var(--gutter)}
+.cs-head{display:flex;justify-content:space-between;gap:40px;padding-top:120px}
+.cs-head__main{width:min(590px,60%)}
+.cs-head__title{margin-bottom:12px}
+.cs-head__summary{color:var(--muted)}
+.cs-head__summary p+p{margin-top:13px}
+.cs-meta{width:33%;display:grid;gap:12px;margin:0}
+.cs-meta dt{color:var(--muted)}
+.cs-meta dd{margin:0}
+.cs-hero{margin-top:120px}
+.cs-figure{margin:0}
+.cs-figure img{width:100%;height:auto;background:#222}
+.cs-figure figcaption{color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-small);margin-top:12px}
+.cs-block{margin-top:120px}
+.cs-text{display:grid;grid-template-columns:40% minmax(0,590px);gap:40px}
+.cs-text__heading{color:var(--muted)}
+.cs-text__body{color:var(--muted)}
+.cs-text__body p+p{margin-top:13px}
+.cs-text__body a{color:var(--fg)}
+.cs-image--inset{width:60%}
+.cs-gallery{display:grid;gap:40px}
+.cs-gallery--2{grid-template-columns:1fr 1fr}
+.cs-gallery--3{grid-template-columns:1fr 1fr 1fr}
+.cs-quote blockquote{margin:0 0 0 calc(40% + 40px);max-width:760px;font-size:28px;line-height:38px}
+.cs-quote footer{color:var(--muted);font-size:var(--fs);line-height:var(--lh);margin-top:20px}
+.cs-stats .cs-text__heading{margin-bottom:40px}
+.cs-stats dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:40px;margin:0}
+.cs-stats dt{font-size:40px;line-height:48px}
+.cs-stats dd{margin:8px 0 0;color:var(--muted)}
+.cs-next{margin-top:200px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.cs-next__home{color:var(--muted)}
+.cs .footer{padding-top:120px}
+@media (max-width:809px){
+  .cs-head{flex-direction:column;padding-top:60px}
+  .cs-head__main,.cs-meta,.cs-image--inset{width:100%}
+  .cs-hero,.cs-block{margin-top:80px}
+  .cs-text{grid-template-columns:1fr;gap:12px}
+  .cs-gallery--2,.cs-gallery--3{grid-template-columns:1fr;gap:20px}
+  .cs-quote blockquote{margin:0;font-size:22px;line-height:30px}
+  .cs-next{margin-top:120px}
 }
 
 @media (prefers-reduced-motion:reduce){

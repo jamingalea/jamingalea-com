@@ -13,6 +13,18 @@ Open **https://jamingalea.com/admin/**. From there you can:
 - change the page title, description, share (OG) image, favicon and home-screen icon
 - see a live preview at desktop, tablet and phone sizes before publishing
 
+### Case study pages
+
+Open a project and press **Start case study →**. A case study has a summary, project
+details (Role, Year…), a main image and a body built from blocks: Text, Image, Image row,
+Quote and Numbers. Pick a case study in the preview's page menu to see it.
+
+Case studies stay as drafts until you tick **Publish this case study**. Then publishing
+creates the page at `/work/<project>/`, and the project on the homepage links to it.
+Switch it off again and the page is removed on the next publish.
+
+The page styles are a plain starting point, in the "Case study pages" section of `site.css`.
+
 Your edits are saved as a draft in that browser until you press **Publish**.
 Publishing makes one commit to `main` on GitHub with the new `content.json`, a regenerated
 `index.html` and any new images. Vercel then deploys it automatically, usually within a minute.

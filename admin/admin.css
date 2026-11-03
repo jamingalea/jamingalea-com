@@ -55,6 +55,7 @@ code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--chip
 .devices{display:flex;background:var(--chip);border-radius:8px;padding:3px}
 .devices button{border:0;background:none;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px}
 .devices button.is-on{background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.page-select{width:auto!important;max-width:280px;padding:6px 10px!important;font-size:13px}
 .preview__stage{flex:1;position:relative;overflow:hidden}
 .preview__stage iframe{position:absolute;top:0;left:50%;border:0;background:#1a1a1a;transform-origin:top center}
 .layout:not([data-device=desktop]) .preview__stage iframe{top:28px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
@@ -93,6 +94,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .card__body{padding:8px 24px 8px;border-top:1px solid var(--line)}
 .card__body>*:first-child{margin-top:20px}
 .add{width:100%;margin-top:16px;padding:12px;border-style:dashed}
+.kind{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--chip);border-radius:6px;padding:4px 8px;flex:none}
+.cs-entry{display:flex;align-items:center;gap:16px;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:8px 0 24px}
+.cs-entry strong{display:block;font-weight:500}
+.back{border:0;background:none;padding:0;color:var(--muted);cursor:pointer;margin-bottom:20px}
+.back:hover{color:var(--fg)}
+.cs-title{font-size:20px;font-weight:600;margin:0 0 8px}
+.add-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.subcard{border:1px solid var(--line);border-radius:10px;padding:16px 16px 0;margin-bottom:12px}
 .badge{font-size:11px;padding:1px 6px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:400;margin-left:6px}
 
 /* Image field */

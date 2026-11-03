@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, hasCaseStudy } from '/render.mjs';
 
 /* ---------- small helpers ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -101,6 +101,8 @@ const state = {
   pending: new Map(),     // path -> { blob, url }
   tab: store.get('cms-tab', 'projects'),
   open: new Set(),        // expanded cards (object refs)
+  caseFor: null,          // project whose case study is being edited
+  previewPage: 'home',    // 'home' or a project id
   device: store.get('cms-device', 'desktop'),
 };
 
@@ -241,7 +243,28 @@ function renderPreview() {
       }
     } catch { /* ignore */ }
   };
-  frame.srcdoc = renderSite(state.content, { asset: assetUrl, headExtra: PREVIEW_HEAD });
+  const opts = { asset: assetUrl, headExtra: PREVIEW_HEAD };
+  const p = state.previewPage !== 'home' && state.content.projects.find((x) => x.id === state.previewPage);
+  frame.srcdoc = p ? renderCaseStudy(state.content, p, opts) : renderSite(state.content, opts);
+  updatePageSelect();
+}
+
+// The preview's page picker lists the homepage and every project that has a case study.
+function updatePageSelect() {
+  const sel = $('#preview-page');
+  const projects = state.content.projects.filter((p) => p.caseStudy);
+  if (state.previewPage !== 'home' && !projects.some((p) => p.id === state.previewPage)) state.previewPage = 'home';
+  sel.replaceChildren(h('option', { value: 'home' }, 'Homepage'),
+    ...projects.map((p) => h('option', { value: p.id }, `Case study: ${p.title}${hasCaseStudy(p) ? '' : ' (draft)'}`)));
+  sel.value = state.previewPage;
+  sel.hidden = !projects.length;
+}
+function showPreviewPage(page) {
+  if (state.previewPage === page) return;
+  state.previewPage = page;
+  const frame = $('#preview');
+  try { frame.contentWindow.scrollTo(0, 0); } catch { /* ignore */ }
+  renderPreview();
 }
 
 /* ---------- images ---------- */
@@ -373,11 +396,12 @@ function tagsField(list) {
 }
 
 // Collapsible card with reorder / duplicate / hide / delete tools.
-function card(item, { thumb, thumbIcon, title, subtitle, onMove, canUp, canDown, onDuplicate, onDelete, body, scrollId }) {
+function card(item, { thumb, thumbIcon, noThumb, kind, title, subtitle, onMove, canUp, canDown, onDuplicate, onDelete, body, scrollId }) {
   const isOpen = state.open.has(item);
   const head = h('div.card__head', { role: 'button', tabindex: 0, 'aria-expanded': String(isOpen) },
-    h('img.card__thumb' + (thumbIcon ? '.card__thumb--icon' : ''), { src: thumb ? assetUrl(thumb) : 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', alt: '' }),
-    h('div.card__title', title || 'Untitled', item.hidden && h('span.badge', 'Hidden'), subtitle && h('span.muted', subtitle)),
+    !noThumb && h('img.card__thumb' + (thumbIcon ? '.card__thumb--icon' : ''), { src: thumb ? assetUrl(thumb) : 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', alt: '' }),
+    kind && h('span.kind', kind),
+    h('div.card__title', title || (kind ? '' : 'Untitled'), item.hidden && h('span.badge', 'Hidden'), subtitle && h('span.muted', subtitle)),
     h('div.card__tools',
       h('button.icon-btn', { type: 'button', title: 'Move up', disabled: !canUp, onclick: (e) => { e.stopPropagation(); onMove(-1); } }, '↑'),
       h('button.icon-btn', { type: 'button', title: 'Move down', disabled: !canDown, onclick: (e) => { e.stopPropagation(); onMove(1); } }, '↓'),
@@ -397,6 +421,151 @@ function move(list, i, to) {
   if (to < 0 || to >= list.length) return;
   list.splice(to, 0, list.splice(i, 1)[0]);
   changed(); renderPanel();
+}
+
+/* ---------- case studies ---------- */
+const BLOCK_TYPES = {
+  text: { label: 'Text', make: () => ({ type: 'text', heading: '', text: '' }) },
+  image: { label: 'Image', make: () => ({ type: 'image', image: '', alt: '', caption: '', size: 'full' }) },
+  gallery: { label: 'Image row', make: () => ({ type: 'gallery', images: [{ image: '', alt: '', caption: '' }, { image: '', alt: '', caption: '' }] }) },
+  quote: { label: 'Quote', make: () => ({ type: 'quote', text: '', cite: '' }) },
+  stats: { label: 'Numbers', make: () => ({ type: 'stats', heading: '', items: [{ value: '', label: '' }, { value: '', label: '' }, { value: '', label: '' }] }) },
+};
+
+function newCaseStudy() {
+  return {
+    enabled: false, summary: '', heroImage: '', heroAlt: '',
+    meta: [{ label: 'Role', value: '' }, { label: 'Year', value: '' }],
+    blocks: [
+      { type: 'text', heading: 'The challenge', text: '' },
+      { type: 'text', heading: 'The approach', text: '' },
+      { type: 'text', heading: 'The outcome', text: '' },
+    ],
+  };
+}
+
+function openCaseStudy(p) {
+  p.caseStudy ||= newCaseStudy();
+  state.caseFor = p;
+  state.tab = 'projects';
+  $('#panel').scrollTop = 0;
+  changed(); renderPanel();
+  showPreviewPage(p.id);
+}
+
+function caseStudyEntry(p) {
+  const cs = p.caseStudy;
+  const status = !cs ? 'Not started'
+    : hasCaseStudy(p) ? `Published at /work/${p.id}/`
+    : 'Draft: not on the site yet';
+  return h('div.cs-entry',
+    h('div', h('strong', 'Case study page'), h('span.hint', status)),
+    h('button.btn.btn--sm', { type: 'button', onclick: () => openCaseStudy(p) }, cs ? 'Edit case study →' : 'Start case study →'));
+}
+
+function blockBody(b) {
+  switch (b.type) {
+    case 'text': return [
+      text('Heading', b, 'heading', { placeholder: 'Optional, e.g. The challenge' }),
+      area('Text', b, 'text', { rows: 8 }),
+    ];
+    case 'image': return [
+      imageField('Image', b, 'image', 'project', { onChange: renderPanel, nameHint: () => state.caseFor?.title }),
+      text('Image description (alt text)', b, 'alt'),
+      text('Caption', b, 'caption', { placeholder: 'Optional' }),
+      select('Size', b, 'size', [['full', 'Full width'], ['inset', 'Narrower']]),
+    ];
+    case 'gallery': return [
+      h('p.hint', 'Two or three images side by side. On phones they stack.'),
+      ...b.images.map((img, i) => h('div.subcard',
+        imageField(`Image ${i + 1}`, img, 'image', 'project', { onChange: renderPanel, nameHint: () => state.caseFor?.title }),
+        text('Alt text', img, 'alt'),
+        text('Caption', img, 'caption', { placeholder: 'Optional' }),
+        b.images.length > 1 && h('button.btn.btn--sm.btn--danger', { type: 'button', style: { marginBottom: '16px' }, onclick: () => { b.images.splice(i, 1); changed(); renderPanel(); } }, 'Remove image'))),
+      b.images.length < 3 && h('button.btn.btn--sm', { type: 'button', style: { marginBottom: '24px' }, onclick: () => { b.images.push({ image: '', alt: '', caption: '' }); changed(); renderPanel(); } }, '+ Add image'),
+    ];
+    case 'quote': return [
+      area('Quote', b, 'text', { rows: 4, hint: '' }),
+      text('Who said it', b, 'cite', { placeholder: 'e.g. Jane Smith, Head of Product' }),
+    ];
+    case 'stats': return [
+      text('Heading', b, 'heading', { placeholder: 'Optional, e.g. Results' }),
+      ...b.items.map((s, i) => h('div.subcard',
+        h('div.grid2', text('Number', s, 'value', { placeholder: 'e.g. 12%' }), text('Label', s, 'label', { placeholder: 'e.g. of revenue' })),
+        h('button.btn.btn--sm.btn--danger', { type: 'button', style: { marginBottom: '16px' }, onclick: () => { b.items.splice(i, 1); changed(); renderPanel(); } }, 'Remove'))),
+      h('button.btn.btn--sm', { type: 'button', style: { marginBottom: '24px' }, onclick: () => { b.items.push({ value: '', label: '' }); changed(); renderPanel(); } }, '+ Add number'),
+    ];
+    default: return [h('p.hint', `Unknown block type “${b.type}”.`)];
+  }
+}
+
+function blockTitle(b) {
+  const first = (s) => String(s || '').split('\n')[0].slice(0, 60);
+  return first(b.heading) || first(b.text) || first(b.caption) || (b.image && 'Image') || '';
+}
+
+function caseStudyPanel(p) {
+  const cs = p.caseStudy;
+  cs.meta ||= []; cs.blocks ||= [];
+  const blocks = cs.blocks;
+  const metaBox = h('div');
+  const drawMeta = () => metaBox.replaceChildren(...cs.meta.map((m, i) => h('div.subcard',
+    h('div.grid2', text('Label', m, 'label', { placeholder: 'e.g. Role' }), text('Value', m, 'value', { placeholder: 'e.g. Lead Product Designer' })),
+    h('div.row', { style: { marginBottom: '16px' } },
+      h('button.btn.btn--sm', { type: 'button', disabled: i === 0, onclick: () => { cs.meta.splice(i - 1, 0, cs.meta.splice(i, 1)[0]); changed(); drawMeta(); } }, '↑ Up'),
+      h('span.spacer'),
+      h('button.btn.btn--sm.btn--danger', { type: 'button', onclick: () => { cs.meta.splice(i, 1); changed(); drawMeta(); } }, 'Remove')))),
+  h('button.btn.btn--sm', { type: 'button', onclick: () => { cs.meta.push({ label: '', value: '' }); changed(); drawMeta(); } }, '+ Add detail'));
+  drawMeta();
+
+  const addBlock = (type) => { const b = BLOCK_TYPES[type].make(); blocks.push(b); state.open.add(b); changed(); renderPanel(); };
+  const slug = h('input', { type: 'text', value: p.id });
+  slug.addEventListener('change', () => {
+    const next = uniqueId(slug.value, p);
+    if (state.previewPage === p.id) state.previewPage = next;
+    p.id = next; slug.value = next; changed(); renderPanel();
+  });
+
+  return [
+    h('button.back', { type: 'button', onclick: () => { state.caseFor = null; renderPanel(); showPreviewPage('home'); } }, '← All projects'),
+    h('h2.cs-title', p.title || 'Untitled'),
+    h('p.intro', 'A page with more detail about this project. The text from the homepage is used wherever you leave a field empty.'),
+
+    h('label.check', { style: { marginBottom: '8px', fontWeight: 500 } },
+      bind(cs, 'enabled', h('input', { type: 'checkbox', checked: !!cs.enabled }), { onInput: () => renderPanel() }),
+      'Publish this case study'),
+    h('p.hint', { style: { margin: '0 0 24px' } }, cs.enabled
+      ? `When you publish, the page goes live at /work/${p.id}/ and the project on the homepage links to it.`
+      : 'Off: you can write and preview it, but it stays off the site until you switch this on.'),
+    h('label', 'Page address', h('div.row', h('span.muted', '/work/'), slug, h('span.muted', '/')), h('small', 'Letters, numbers and dashes. Changing it changes the link.')),
+
+    h('h3.group', 'Introduction'),
+    area('Summary', cs, 'summary', { rows: 5, placeholder: 'Leave empty to use the homepage description.' }),
+    imageField('Main image', cs, 'heroImage', 'project', { hint: 'Leave empty to use the homepage image.', onChange: renderPanel, nameHint: () => p.title }),
+    text('Main image description (alt text)', cs, 'heroAlt'),
+
+    h('h3.group', 'Project details'),
+    h('p.hint', 'Shown beside the summary, e.g. Role, Year, Team, Platform. The project link is added automatically.'),
+    metaBox,
+
+    h('h3.group', 'Content'),
+    h('p.hint', 'The body of the page, built from blocks. Reorder with the arrows.'),
+    h('div.list', blocks.map((b, i) => card(b, {
+      noThumb: true, kind: BLOCK_TYPES[b.type]?.label || b.type, title: blockTitle(b),
+      canUp: i > 0, canDown: i < blocks.length - 1,
+      onMove: (d) => move(blocks, i, i + d),
+      onDuplicate: () => { const copy = clone(b); blocks.splice(i + 1, 0, copy); state.open.add(copy); changed(); renderPanel(); },
+      onDelete: () => { blocks.splice(i, 1); changed(); renderPanel(); },
+      body: () => blockBody(b),
+    }))),
+    h('div.add-row', h('span.hint', { style: { alignSelf: 'center', marginRight: '4px' } }, 'Add:'),
+      Object.entries(BLOCK_TYPES).map(([type, t]) => h('button.btn.btn--sm', { type: 'button', onclick: () => addBlock(type) }, `+ ${t.label}`))),
+
+    h('h3.group', 'Search & sharing'),
+    text('Page title', cs, 'seoTitle', { placeholder: `${p.title} — ${state.content.intro?.name || ''}`, limit: 60 }),
+    area('Description', cs, 'seoDescription', { rows: 3, limit: 160, hint: 'Leave empty to use the summary.' }),
+    imageField('Share image', cs, 'ogImage', 'og', { hint: 'Leave empty to use the main image. 1200 × 630 fits best.', nameHint: () => `${p.title} og` }),
+  ];
 }
 
 /* ---------- panels ---------- */
@@ -426,6 +595,7 @@ const panels = {
             area('Description', p, 'text', { rows: 8 }),
             tagsField(p.tags),
             select('Column', p, 'column', [['left', 'Left — large landscape image'], ['right', 'Right — square image']], renderPanel),
+            caseStudyEntry(p),
           ],
         }))),
         h('button.btn.add', { type: 'button', onclick: () => {
@@ -549,7 +719,9 @@ const panels = {
 function renderPanel() {
   const panel = $('#panel');
   const scroll = panel.scrollTop;
-  panel.replaceChildren(...[panels[state.tab]()].flat(Infinity).filter(Boolean));
+  if (state.caseFor && !state.content.projects.includes(state.caseFor)) state.caseFor = null;
+  const content = state.caseFor && state.tab === 'projects' ? caseStudyPanel(state.caseFor) : panels[state.tab]();
+  panel.replaceChildren(...[content].flat(Infinity).filter(Boolean));
   panel.scrollTop = scroll;
   $$('.tabs button').forEach((b) => b.classList.toggle('is-on', b.dataset.tab === state.tab));
 }
@@ -673,7 +845,17 @@ async function publish(message) {
   }
   const json = JSON.stringify(content, null, 2) + '\n';
   tree.push({ path: 'content.json', mode: '100644', type: 'blob', content: json });
-  tree.push({ path: 'index.html', mode: '100644', type: 'blob', content: renderSite(content) });
+  const pages = renderPages(content);
+  for (const page of pages) tree.push({ path: page.path, mode: '100644', type: 'blob', content: page.html });
+
+  // Remove case study pages that are no longer published.
+  const keep = new Set(pages.map((p) => p.path));
+  const existing = await gh(`/git/trees/${commit.tree.sha}?recursive=1`);
+  for (const f of existing.tree || []) {
+    if (f.type === 'blob' && /^work\/[^/]+\/index\.html$/.test(f.path) && !keep.has(f.path)) {
+      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+    }
+  }
 
   const newTree = await gh('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: commit.tree.sha, tree }) });
   const newCommit = await gh('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: newTree.sha, parents: [head] }) });
@@ -718,7 +900,17 @@ menu.addEventListener('click', async (e) => {
   }
 });
 
-$$('.tabs button').forEach((b) => b.addEventListener('click', () => { state.tab = b.dataset.tab; store.set('cms-tab', state.tab); $('#panel').scrollTop = 0; renderPanel(); }));
+$$('.tabs button').forEach((b) => b.addEventListener('click', () => {
+  state.tab = b.dataset.tab; store.set('cms-tab', state.tab);
+  if (state.caseFor) { state.caseFor = null; showPreviewPage('home'); }
+  $('#panel').scrollTop = 0; renderPanel();
+}));
+$('#preview-page').addEventListener('change', (e) => {
+  showPreviewPage(e.target.value);
+  const p = state.content.projects.find((x) => x.id === e.target.value);
+  if (p) { state.caseFor = p; state.tab = 'projects'; } else state.caseFor = null;
+  $('#panel').scrollTop = 0; renderPanel();
+});
 $$('.bar__mid .seg').forEach((b) => b.addEventListener('click', () => {
   $('.layout').dataset.view = b.dataset.view;
   $$('.bar__mid .seg').forEach((x) => x.classList.toggle('is-on', x === b));
