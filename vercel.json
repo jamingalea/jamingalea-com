@@ -5,8 +5,12 @@
       "headers": [{ "key": "Content-Type", "value": "application/javascript" }]
     },
     {
-      "source": "/(.*)\\.framercms",
-      "headers": [{ "key": "Content-Type", "value": "application/octet-stream" }]
+      "source": "/admin/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/content.json",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     }
   ]
 }

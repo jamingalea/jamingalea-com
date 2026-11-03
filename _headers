@@ -1,8 +1,5 @@
 /*.mjs
   Content-Type: application/javascript
 
-/*.framercms
-  Content-Type: application/octet-stream
-
-/*.lottie
-  Content-Type: application/zip
+/admin/*
+  X-Robots-Tag: noindex, nofollow
