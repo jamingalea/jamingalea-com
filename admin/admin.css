@@ -76,6 +76,12 @@ code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--chip
 .page-select{width:auto!important;max-width:280px;padding:6px 10px!important;font-size:13px}
 .preview__stage{flex:1;position:relative;overflow:hidden}
 .preview__stage iframe{position:absolute;top:0;left:50%;border:0;background:#1a1a1a;transform-origin:top center}
+.handle{position:absolute;top:50%;width:8px;height:64px;margin:-32px 0 0 -4px;border-radius:999px;background:color-mix(in srgb,var(--muted) 55%,transparent);cursor:ew-resize;z-index:2;touch-action:none;transition:background .15s,height .15s,margin .15s}
+.handle::before{content:"";position:absolute;inset:-12px -10px}
+.handle:hover,.handle:focus-visible,.is-resizing .handle{background:var(--muted);height:96px;margin-top:-48px}
+.is-resizing,.is-resizing *{cursor:ew-resize!important;user-select:none}
+.is-resizing iframe{pointer-events:none}
+.size-badge{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--accent);color:var(--accent-fg);font-size:12px;font-variant-numeric:tabular-nums;padding:4px 10px;border-radius:999px;z-index:3;pointer-events:none}
 .layout:not([data-device=desktop]) .preview__stage iframe{top:28px;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 
 /* Forms */

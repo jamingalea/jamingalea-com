@@ -934,25 +934,99 @@ $$('.bar__mid .seg').forEach((b) => b.addEventListener('click', () => {
   $$('.bar__mid .seg').forEach((x) => x.classList.toggle('is-on', x === b));
 }));
 // Render the preview at the real device width and scale it down to fit.
+// Drag the handles either side of the preview to set a custom width.
 const DEVICE_WIDTH = { desktop: 1440, tablet: 810, mobile: 390 };
-function fitPreview() {
+const MIN_WIDTH = 320, MAX_WIDTH = 2560;
+state.customWidth = store.get('cms-custom-width', null);
+const previewWidth = () => (state.device === 'custom' && state.customWidth) || DEVICE_WIDTH[state.device] || 1440;
+const stagePad = () => (state.device === 'desktop' ? 0 : 32);
+
+function fitPreview(fixedScale) {
   const stage = $('.preview__stage'), frame = $('#preview');
   const W = stage.clientWidth, H = stage.clientHeight;
-  if (!W || !H) return;
-  const w = DEVICE_WIDTH[state.device] || 1440;
-  const pad = state.device === 'desktop' ? 0 : 32;
-  const scale = Math.min(1, (W - pad) / w);
+  if (!W || !H) return 1;
+  const w = previewWidth(), pad = stagePad();
+  const scale = fixedScale || Math.min(1, (W - pad) / w);
   frame.style.width = `${w}px`;
   frame.style.height = `${(H - pad) / scale}px`;
   frame.style.transform = `translateX(-50%) scale(${scale})`;
+  // Keep the handles on the frame's edges (inside the stage when the frame fills it).
+  const half = Math.min((w * scale) / 2, W / 2 - 8);
+  $('.handle--l').style.left = `${W / 2 - half - 6}px`;
+  $('.handle--r').style.left = `${W / 2 + half + 6}px`;
+  return scale;
 }
-new ResizeObserver(fitPreview).observe($('.preview__stage'));
+new ResizeObserver(() => fitPreview()).observe($('.preview__stage'));
+
+function showCustomWidth() {
+  const btn = $('.devices [data-device=custom]');
+  btn.hidden = !state.customWidth;
+  $('#custom-width').textContent = state.customWidth || '';
+}
+
 const setDevice = (d) => {
+  if (d === 'custom' && !state.customWidth) d = 'desktop';
   state.device = d; store.set('cms-device', d);
   $('.layout').dataset.device = d;
   $$('.devices button').forEach((x) => x.classList.toggle('is-on', x.dataset.device === d));
+  showCustomWidth();
   fitPreview();
 };
+
+function setCustomWidth(w) {
+  state.customWidth = Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, w)));
+  if (state.device !== 'custom') {
+    state.device = 'custom';
+    $('.layout').dataset.device = 'custom';
+    $$('.devices button').forEach((x) => x.classList.toggle('is-on', x.dataset.device === 'custom'));
+  }
+  showCustomWidth();
+  $('#size-badge').textContent = `${state.customWidth}px`;
+}
+function saveCustomWidth() {
+  store.set('cms-custom-width', state.customWidth);
+  store.set('cms-device', 'custom');
+}
+
+$$('.handle').forEach((handle) => {
+  handle.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    const stage = $('.preview__stage');
+    const rect = stage.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    // Keep the zoom fixed while dragging so the handle tracks the pointer.
+    const scale = Math.min(1, (stage.clientWidth - 32) / previewWidth());
+    const badge = $('#size-badge');
+    document.body.classList.add('is-resizing');
+    badge.hidden = false;
+    const move = (ev) => {
+      setCustomWidth((2 * Math.abs(ev.clientX - cx)) / scale);
+      // Track the pointer at the starting zoom; zoom out only once the frame would overflow.
+      fitPreview(state.customWidth * scale <= stage.clientWidth - 32 ? scale : undefined);
+    };
+    move(e);
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      document.body.classList.remove('is-resizing');
+      badge.hidden = true;
+      saveCustomWidth();
+      fitPreview();
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up, { once: true });
+    handle.addEventListener('pointercancel', up, { once: true });
+  });
+  // Keyboard: arrow keys resize by 10px (50px with Shift).
+  handle.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const outward = (e.key === 'ArrowRight') === (handle.dataset.side === '1');
+    setCustomWidth(previewWidth() + (outward ? 1 : -1) * (e.shiftKey ? 50 : 10));
+    saveCustomWidth();
+    fitPreview();
+  });
+});
 $$('.devices button').forEach((b) => b.addEventListener('click', () => setDevice(b.dataset.device)));
 setDevice(state.device);
 

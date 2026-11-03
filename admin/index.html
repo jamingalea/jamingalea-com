@@ -54,11 +54,17 @@
         <button type="button" data-device="desktop" class="is-on">Desktop</button>
         <button type="button" data-device="tablet">Tablet</button>
         <button type="button" data-device="mobile">Phone</button>
+        <button type="button" data-device="custom" hidden>Custom · <span id="custom-width"></span>px</button>
       </div>
       <select id="preview-page" class="page-select" aria-label="Page to preview" hidden></select>
       <span class="muted small">Live preview of your unpublished edits</span>
     </div>
-    <div class="preview__stage"><iframe id="preview" title="Site preview"></iframe></div>
+    <div class="preview__stage">
+      <iframe id="preview" title="Site preview"></iframe>
+      <div class="handle handle--l" data-side="-1" role="separator" aria-orientation="vertical" aria-label="Drag to resize preview" tabindex="0"></div>
+      <div class="handle handle--r" data-side="1" role="separator" aria-orientation="vertical" aria-label="Drag to resize preview" tabindex="0"></div>
+      <div id="size-badge" class="size-badge" hidden></div>
+    </div>
   </section>
 </div>
 
