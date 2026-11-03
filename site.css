@@ -1,0 +1,114 @@
+/* Inter Light (300), self-hosted */
+@font-face{font-family:Inter;src:url(/fonts/aqiiD4LUKkKzXdjGL5UzHq8bo5w.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2070,U+2074-207E,U+2080-208E,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Inter;src:url(/fonts/Sj0PCHQSBjFmEp6NBWg6FNaKc.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0100-024F,U+0259,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Inter;src:url(/fonts/H4TfENUY1rh8R9UaSD6vngjJP3M.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:Inter;src:url(/fonts/oLCoaT3ioA0fHdJnWR9W6k7NY.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0370-03FF}
+@font-face{font-family:Inter;src:url(/fonts/IETjvc5qzUaRoaruDpPSwCUM8.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+1F00-1FFF}
+@font-face{font-family:Inter;src:url(/fonts/zAMK70AQRFSShJgUiaR5IiIhgzk.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Inter;src:url(/fonts/BkDpl4ghaqvMi1btKFyG2tdbec.woff2) format("woff2");font-weight:300;font-display:swap;unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F}
+
+:root{
+  --bg:#1a1a1a;
+  --fg:#fff;
+  --muted:rgba(255,255,255,.4);
+  --green:#31691b;
+  --gutter:40px;
+  --fs:18px;
+  --lh:26px;
+  --fs-small:16px;
+  --lh-small:24px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:300 var(--fs)/var(--lh) Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,p,ul{margin:0;padding:0;font:inherit}
+ul{list-style:none}
+img{display:block;max-width:100%}
+a{color:var(--fg);text-decoration:none;transition:opacity .2s}
+a:hover{opacity:.7}
+.arrow{width:.7em;height:.7em;margin-left:.45em;vertical-align:.02em;overflow:visible}
+
+/* Hero: stays put while the work scrolls over it, fading out (site.js) */
+.hero{position:sticky;top:0;z-index:0;min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px;pointer-events:none}
+.hero a{pointer-events:auto}
+.hero__intro{width:min(591px,45%)}
+.hero__name{line-height:22px;margin-bottom:4px}
+.hero__tagline,.hero__bio{color:var(--muted)}
+.hero__bio{width:33%}
+.hero__bio p+p{margin-top:var(--lh)}
+
+/* Work: two columns, large on the left, small (square) on the right */
+.work{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
+.work__col{display:flex;flex-direction:column;gap:120px}
+.work__col--left{width:60%}
+.work__col--right{width:33%;margin-top:200px}
+.project__media{background:#222;overflow:hidden}
+.project__media img{width:100%;height:100%;object-fit:cover}
+.work__col--left .project__media{aspect-ratio:1896/1456}
+.work__col--right .project__media{aspect-ratio:1}
+.project__body{padding-top:40px}
+.work__col--left .project__body{max-width:490px}
+.project__title{margin-bottom:12px}
+.project__text,.highlight__text{color:var(--muted)}
+.project__text p+p{margin-top:13px}
+.project__text a,.highlight__text a,.hero__tagline a{color:var(--fg)}
+
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.tag{position:relative;font-size:var(--fs-small);line-height:26px;padding:0 9px;border-radius:10px;color:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.tag--highlight{color:#4f9b30;box-shadow:inset 0 0 0 1px var(--green);color:var(--green);filter:brightness(1.55)}
+
+/* Other highlights: an endless ticker (site.js duplicates the items) */
+.highlights{padding-top:120px}
+.section-title{color:var(--muted);line-height:22px}
+.highlights .section-title{padding:0 var(--gutter);margin-bottom:40px}
+.ticker{overflow-x:auto;scrollbar-width:none}
+.ticker::-webkit-scrollbar{display:none}
+.ticker__track{display:flex;gap:40px;padding:0 var(--gutter);width:max-content}
+.ticker.is-running{overflow:hidden}
+.ticker.is-running .ticker__track{padding-right:0;animation:ticker calc(var(--count) * 9s) linear infinite}
+.ticker.is-running:hover .ticker__track{animation-play-state:paused}
+@keyframes ticker{to{transform:translateX(calc(-50% - 20px))}}
+.highlight{width:340px;flex:none;font-size:var(--fs-small);line-height:var(--lh-small)}
+.highlight__icon{height:50px;width:auto;margin-bottom:40px}
+.highlight__title{margin-bottom:12px}
+.highlight .tags{margin-top:12px}
+
+.footer{display:flex;padding:200px var(--gutter);gap:40px}
+.footer .section-title{width:calc(60% + 163px - var(--gutter))}
+
+/* Scroll reveal (only when JS runs) */
+.js .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.js .reveal.is-in{opacity:1;transform:none}
+
+/* Tablet */
+@media (max-width:1199px){
+  .hero{flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
+  .hero__intro,.hero__bio{width:100%;max-width:730px}
+  .work{display:block;padding-top:120px}
+  .work__col--left{width:100%}
+  .work__col--left .project__body{max-width:none}
+  .work__col--right{width:100%;margin-top:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px 40px}
+  .highlights{padding-top:120px}
+  .footer{flex-direction:column;gap:12px;padding:80px var(--gutter)}
+  .footer .section-title{width:auto}
+}
+
+/* Phone */
+@media (max-width:809px){
+  :root{--gutter:20px;--fs:16px;--lh:24px}
+  .hero{padding-top:160px}
+  .hero__name{line-height:19px}
+  .work{padding:0 0 0}
+  .work__col--right{display:flex;margin-top:120px}
+  .project__body{padding:20px var(--gutter) 0}
+  .project__text p+p{margin-top:12px}
+  .highlights{padding-top:80px}
+  .highlights .section-title{margin-bottom:30px}
+  .footer{padding:80px var(--gutter)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .js .reveal{opacity:1;transform:none;transition:none}
+  .ticker.is-running .ticker__track{animation:none}
+  .ticker.is-running{overflow-x:auto}
+}

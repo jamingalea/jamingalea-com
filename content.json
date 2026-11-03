@@ -1,0 +1,206 @@
+{
+  "site": {
+    "title": "Jamin Galea — Product Designer",
+    "description": "A London-based, product designer with over 15 years experience in the design industry. Founder of booksabout.food",
+    "ogImage": "images/KfvALQwhwXkwCBLFcjfMTKBSbc0.png",
+    "favicon": "images/FaBhTUwoopy0qvtqBlnsbbYw.png",
+    "appleTouchIcon": "images/04VD7Eps2RxYN1J6oy03h64XvkM.png",
+    "url": "https://jamingalea.com",
+    "lang": "en-GB"
+  },
+  "intro": {
+    "name": "Jamin Galea",
+    "tagline": "A London-based digital product designer. Currently, Lead Product Designer at [Popsa](https://popsa.com/) focussed on memory-curation features on our native apps.",
+    "bio": "With over 15 years of multifaceted design experience, my work across web and native app interfaces isn’t just user-centred and visually refined; it tackles complexity and drives meaningful outcomes.\n\nOriginally from the small island of Malta, I’ve learned how limitations can spark ambition—pairing pragmatism with big-picture thinking.\n\nThe below is a preview of my most recent work."
+  },
+  "projects": [
+    {
+      "id": "popsa-web-app",
+      "title": "Popsa — Web App",
+      "url": "https://popsa.com/",
+      "image": "images/c3K4dNRxfPHr2dTm98MK0ZyQg8.png",
+      "imageAlt": "Popsa web app on a laptop",
+      "column": "left",
+      "text": "Popsa is an AI-powered platform helping millions of users curate, preserve and relive their memories through beautifully curated memories and printed photo products.\n\nI was entrusted with starting Popsa’s web team. I helped plan, design and launch their first progressive web app in under 9 months. 12% of the revenue and 20% of new accounts now come from this platform. And basket-to-order conversion consistently exceeds the native apps by an average of 9.8% (Q2 ‘24-Q4 ‘25).",
+      "tags": [
+        {
+          "label": "0-1"
+        },
+        {
+          "label": "Case study coming soon"
+        }
+      ]
+    },
+    {
+      "id": "arrival-carehub",
+      "title": "Arrival — CareHub",
+      "url": "",
+      "image": "images/CXgrqIhItiMKn2TMiWvH1RNVQho.png",
+      "imageAlt": "Arrival CareHub on a laptop",
+      "column": "left",
+      "text": "Arrival was an electric vehicle startup reimagining how vehicles are designed and manufactured. CareHub served as the central hub for all the information related to the vehicles and the business.\n\nIt was a comprehensive resource covering everything from financing and procurement to diagnostics and repairs. As it was accessible from every touchpoint, I focused heavily on creating a clear, intuitive content hierarchy. I scoped, planned and designed a year’s worth of features within 2 months, structured for release over 4 phases.",
+      "tags": [
+        {
+          "label": "0-1"
+        },
+        {
+          "label": "Case study coming soon"
+        }
+      ]
+    },
+    {
+      "id": "menu-menu",
+      "title": "Menu Menu",
+      "url": "https://menumenu.app/",
+      "image": "images/S41kMSha95jaeY6Mtm8tIkw3Nrw.png",
+      "imageAlt": "Menu Menu app screens",
+      "column": "left",
+      "text": "An app designed for the hospitality industry that bridges the gap between chefs writing menus and ops teams publishing them. In simple terms, it's a content management and design solution for creating and managing beautifully designed F&B menus in real time.",
+      "tags": [
+        {
+          "label": "0-1"
+        }
+      ]
+    },
+    {
+      "id": "books-about-food",
+      "title": "Books About Food",
+      "url": "https://booksabout.food/",
+      "image": "images/Jgvr1YK5dweuKBkFwtbOvFZ7QRg.png",
+      "imageAlt": "Stack of cookbooks",
+      "column": "right",
+      "text": "Passionate about food and tech, I founded Books About Food; a curated platform showcasing beautifully-designed cookbooks alongside 3,500+ automatically-generated portfolios of the people that make them come to life.\n\nUpdated daily and with 5,500+ pageviews each month, the platform has started to change the way publishing teams operate and commission the design of cookbooks.\n\nFeatured on [Creative Boom](https://www.creativeboom.com/resources/books-about-food/) and [Headnotes](https://francesabrantesbaca.substack.com/p/jamin-galea-is-on-a-cookbook-design). Also on [Instagram](https://www.instagram.com/booksabout.food).",
+      "tags": [
+        {
+          "label": "0-1"
+        },
+        {
+          "label": "Self Initiated"
+        },
+        {
+          "label": "Case study coming soon"
+        }
+      ]
+    },
+    {
+      "id": "soho-house-house-pay",
+      "title": "Soho House — House Pay",
+      "url": "",
+      "image": "images/pLgcA6qlae3cVMG1174sCVS2ONk.png",
+      "imageAlt": "House Pay bill screen on a phone",
+      "column": "right",
+      "text": "Soho House is a members club with more than 40 houses around the World.\n\n'House Pay' was a first principles approach to a new payment system built into the members' app and integrated with a complex in-house POS systems. The new interface enhanced the members' experience and started the journey towards better data science for the business. It was also designed to improve the member experience, streamline operations and reduce fraudulent activities.",
+      "tags": [
+        {
+          "label": "0-1"
+        },
+        {
+          "label": "Case study available on request",
+          "highlight": true
+        }
+      ]
+    },
+    {
+      "id": "arrival-fleet-simulator",
+      "title": "Arrival — Fleet Simulator",
+      "url": "",
+      "image": "images/ucDYzfRbbdl6mFsrYgvroHeuZZc.png",
+      "imageAlt": "Fleet simulator settings panel over a map",
+      "column": "right",
+      "text": "The fleet simulator allowed teams to remotely diagnose, monitor and manage virtual fleets through an interactive map and timeline.\n\nWhile physical vehicles were still in production, the simulator provided realistic data across 200+ telemetry points, enabling teams to model real-world scenarios, test and iterate on code, validate internal procedures and build confidence in how the vehicles would behave once deployed.",
+      "tags": [
+        {
+          "label": "0-1"
+        },
+        {
+          "label": "Case study coming soon"
+        }
+      ]
+    }
+  ],
+  "highlights": {
+    "title": "Other highlights",
+    "items": [
+      {
+        "title": "SomeOne in London",
+        "url": "https://someoneinlondon.com/",
+        "icon": "images/6Rf40eslG0zQeSu75Qz3QMNbHI.png",
+        "text": "Set-up and grew the digital arm of one of London's most awarded design agencies with a new agency-model-friendly digital design and development process.",
+        "tags": [
+          {
+            "label": "2015-2019"
+          }
+        ]
+      },
+      {
+        "title": "Brand Cloudlines",
+        "url": "",
+        "icon": "images/ZxEzj0p3S4b1Meq2t1f1u6Q2V0.png",
+        "text": "Developed ahead of market and backed by an initial investment of £250K, I led the scoping, design and build of a SaaS tool for creating and sharing digital brand guidelines. The product was built for one of London’s most awarded design agencies and remains white-labelled and in use today across multiple industries.",
+        "tags": [
+          {
+            "label": "0-1"
+          },
+          {
+            "label": "Self Initiated"
+          },
+          {
+            "label": "2014-2016"
+          }
+        ]
+      },
+      {
+        "title": "UK Parliament",
+        "url": "",
+        "icon": "images/Rx1XFbs65FRnoTFP8OY8Siya34Q.png",
+        "text": "Designed a nationwide role-playing ‘boardgame’ named Election Toolkit in a box; teaching students aged 8-18 in 2,000+ schools how democracy works and why voting matters.",
+        "tags": [
+          {
+            "label": "2014"
+          }
+        ]
+      },
+      {
+        "title": "Wall of Wally",
+        "url": "http://wallofwally.tumblr.com/",
+        "icon": "images/DECyVBXzvnaOOHYneRduk35uETs.png",
+        "text": "An illustrated tribute to the late branding expert Wally Olins. 200+ illustrators from around the world contributed their interpretation of Wally’s most iconic portrait photo which culminated in an exhibition of the work in Shoreditch, London.",
+        "tags": [
+          {
+            "label": "Self Initiated"
+          },
+          {
+            "label": "2014-2015"
+          }
+        ]
+      },
+      {
+        "title": "Design Studio Directory",
+        "url": "https://designstudio.directory/",
+        "icon": "images/hy0DnnrljWUgMoWlBpetxNk8RLI.png",
+        "text": "A curated list of a 1000+ design studios organised by location helping graduates and others looking for creative studios from around the world. This project is now run by Studio Noel.",
+        "tags": [
+          {
+            "label": "Self Initiated"
+          },
+          {
+            "label": "2014-2024"
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "title": "More information",
+    "links": [
+      {
+        "label": "Linkedin",
+        "url": "https://www.linkedin.com/in/jamingalea/"
+      },
+      {
+        "label": "Email",
+        "url": "mailto:jamingalea@gmail.com"
+      }
+    ]
+  }
+}
