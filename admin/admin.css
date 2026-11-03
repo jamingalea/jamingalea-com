@@ -19,8 +19,8 @@
   --field:#141414;--chip:#262625;--stage:#0d0d0d;
 }
 :root[data-theme=light]{color-scheme:light}
-.theme-toggle{width:38px;height:38px;padding:0;display:grid;place-items:center}
-.theme-toggle svg{width:18px;height:18px}
+.btn.theme-toggle{width:38px;height:38px;padding:0;display:grid;place-items:center;flex:none}
+.theme-toggle svg{width:18px;height:18px;flex:none}
 .theme-toggle .moon{display:none}
 :root[data-theme=dark] .theme-toggle .sun{display:none}
 :root[data-theme=dark] .theme-toggle .moon{display:block}
