@@ -905,6 +905,24 @@ $$('.tabs button').forEach((b) => b.addEventListener('click', () => {
   if (state.caseFor) { state.caseFor = null; showPreviewPage('home'); }
   $('#panel').scrollTop = 0; renderPanel();
 }));
+// Light / dark interface toggle (starts from the system setting, then remembers the choice).
+const isDark = () => (document.documentElement.dataset.theme
+  ? document.documentElement.dataset.theme === 'dark'
+  : matchMedia('(prefers-color-scheme: dark)').matches);
+function labelThemeButton() {
+  const label = isDark() ? 'Switch to light mode' : 'Switch to dark mode';
+  $('#btn-theme').title = label;
+  $('#btn-theme').setAttribute('aria-label', label);
+}
+$('#btn-theme').addEventListener('click', () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('cms-theme', next); } catch { /* ignore */ }
+  labelThemeButton();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', labelThemeButton);
+labelThemeButton();
+
 $('#preview-page').addEventListener('change', (e) => {
   showPreviewPage(e.target.value);
   const p = state.content.projects.find((x) => x.id === e.target.value);
