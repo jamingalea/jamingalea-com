@@ -165,7 +165,7 @@ const shell = (body) => `<!DOCTYPE html>
 @media (prefers-color-scheme:dark){:root{--bg:#131313;--panel:#1b1b1b;--fg:#ededea;--muted:#9a9a94;--line:#2b2b2a;--field:#141414;--accent:#ededea;--accent-fg:#141414;--focus:#7aa2ff;--danger:#ff7b6e}}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.card{width:min(400px,100%);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px 32px}
+.card{width:min(360px,100%)}
 h1{font-size:18px;margin:0 0 6px}
 p{margin:0 0 24px;color:var(--muted)}
 label{display:block;font-weight:500;margin-bottom:8px}
@@ -178,11 +178,8 @@ ul{padding-left:20px;margin:0;color:var(--muted)}
 </style></head><body><main class="card">${body}</main></body></html>`;
 
 const loginPage = (error = '') => shell(`
-<h1>Portfolio CMS</h1>
-<p>Enter your password to edit the site.</p>
 <form method="post" action="/admin/login">
-  <label for="pw">Password</label>
-  <input id="pw" name="password" type="password" autocomplete="current-password" required autofocus>
+  <input name="password" type="password" aria-label="Password" autocomplete="current-password" required autofocus>
   ${error ? `<p class="err" role="alert">${error}</p>` : ''}
   <button type="submit">Sign in</button>
 </form>`);
