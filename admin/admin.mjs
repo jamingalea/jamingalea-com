@@ -92,9 +92,11 @@ const idb = {
 };
 
 /* ---------- state ---------- */
-const DEFAULT_CONN = { owner: 'jamingalea', repo: 'jamingalea-com', branch: 'main', token: '' };
+// Older versions kept a GitHub token in the browser. It now lives in Vercel's settings, so forget it here.
+store.del('cms-conn');
+
 const state = {
-  conn: { ...DEFAULT_CONN, ...store.get('cms-conn', {}) },
+  conn: null,             // { owner, repo, branch } from the server once signed in
   published: null,        // content as last loaded from GitHub / the site
   publishedSha: null,     // blob sha of content.json we based our edits on
   content: null,          // working copy
@@ -106,32 +108,33 @@ const state = {
   device: store.get('cms-device', 'desktop'),
 };
 
-/* ---------- GitHub API ---------- */
-async function gh(path, opts = {}) {
-  const { owner, repo, token } = state.conn;
-  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}${path}`, {
+/* ---------- GitHub, via the site's password-protected API (middleware.js) ---------- */
+async function api(path, opts = {}) {
+  const res = await fetch(`/admin/api${path}`, {
     ...opts,
     cache: 'no-store',
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
-    },
+    credentials: 'same-origin',
+    headers: { 'X-CMS': '1', ...(opts.body ? { 'Content-Type': 'application/json' } : {}) },
   });
+  if (res.status === 401) {
+    // Session expired: the next page load shows the sign-in screen.
+    toast('You’ve been signed out. Your draft is saved — sign in again to continue.', 8000);
+    setTimeout(() => location.reload(), 2500);
+  }
   if (!res.ok) {
     let detail = '';
     try { detail = (await res.json()).message || ''; } catch { /* ignore */ }
-    const hint = res.status === 401 ? 'The token is invalid or expired.'
-      : res.status === 403 ? 'The token lacks permission (needs Contents: Read and write).'
-      : res.status === 404 ? 'Repository or branch not found, or the token cannot see it.'
+    const hint = res.status === 502 ? '' // message from the server already explains it
+      : res.status === 403 ? 'The GITHUB_TOKEN in Vercel lacks permission (needs Contents: Read and write).'
+      : res.status === 404 ? 'Repository or branch not found. Check CMS_REPO / CMS_BRANCH in Vercel.'
       : res.status === 409 || res.status === 422 ? 'GitHub rejected the update.' : '';
-    const err = new Error(`${hint} ${detail ? `(${detail})` : `(HTTP ${res.status})`}`.trim());
+    const err = new Error(`${hint} ${detail ? (hint ? `(${detail})` : detail) : `(HTTP ${res.status})`}`.trim());
     err.status = res.status;
     throw err;
   }
   return res.status === 204 ? null : res.json();
 }
+const gh = (path, opts) => api(`/github${path}`, opts);
 
 async function loadFromGitHub() {
   const { branch } = state.conn;
@@ -148,9 +151,11 @@ async function loadFromSite() {
 /* ---------- loading & drafts ---------- */
 async function load({ keepDraft = true } = {}) {
   let base;
-  const connected = !!state.conn.token;
+  if (!state.conn) {
+    try { state.conn = await api('/config'); } catch { state.conn = null; }
+  }
   try {
-    base = connected ? await loadFromGitHub() : await loadFromSite();
+    base = state.conn ? await loadFromGitHub() : await loadFromSite();
   } catch (e) {
     toast(`Couldn't load from GitHub: ${e.message} Showing the site's current content instead.`, 7000);
     base = await loadFromSite();
@@ -752,51 +757,10 @@ function renderPanel() {
 /* ---------- connection ---------- */
 function updateConn() {
   const el = $('#conn');
-  const { owner, repo, branch, token } = state.conn;
-  el.classList.toggle('is-ok', !!token);
-  el.textContent = token ? `${owner}/${repo} · ${branch}` : 'Not connected — click to connect';
+  el.classList.toggle('is-ok', !!state.conn);
+  el.textContent = state.conn ? `Publishing to ${state.conn.branch}` : 'Preview only — publishing works on the live site';
+  el.title = state.conn ? `${state.conn.owner}/${state.conn.repo} · ${state.conn.branch}` : '';
 }
-
-function openConnect() {
-  const f = $('#form-connect');
-  for (const k of ['owner', 'repo', 'branch', 'token']) f.elements[k].value = state.conn[k] || '';
-  $('#connect-msg').textContent = '';
-  $('#dlg-connect').showModal();
-}
-
-$('#form-connect').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const f = e.target, msg = $('#connect-msg');
-  const next = { owner: f.owner.value.trim(), repo: f.repo.value.trim(), branch: f.branch.value.trim(), token: f.token.value.trim() };
-  const prev = state.conn;
-  state.conn = next;
-  msg.className = 'msg'; msg.textContent = 'Checking…';
-  try {
-    const repo = await gh('');
-    if (next.token && repo.permissions && !repo.permissions.push) throw new Error('This token can read the repository but cannot write to it. Give it Contents: Read and write.');
-    await gh(`/branches/${encodeURIComponent(next.branch)}`);
-    store.set('cms-conn', next);
-    msg.className = 'msg ok'; msg.textContent = 'Connected.';
-    $('#dlg-connect').close();
-    updateConn();
-    await load();
-  } catch (err) {
-    state.conn = prev;
-    msg.className = 'msg err'; msg.textContent = err.message;
-  }
-});
-$('#dlg-connect').addEventListener('click', (e) => {
-  const act = e.target.dataset?.act;
-  if (act === 'close') $('#dlg-connect').close();
-  if (act === 'forget') {
-    state.conn = { ...state.conn, token: '' };
-    store.set('cms-conn', state.conn);
-    $('#form-connect').token.value = '';
-    updateConn();
-    $('#connect-msg').className = 'msg'; $('#connect-msg').textContent = 'Token removed from this browser.';
-  }
-});
-$('#conn').addEventListener('click', openConnect);
 
 /* ---------- publish ---------- */
 function summarise() {
@@ -817,7 +781,7 @@ function summarise() {
 }
 
 $('#btn-publish').addEventListener('click', () => {
-  if (!state.conn.token) { toast('Connect to GitHub first, so the CMS can publish for you.'); openConnect(); return; }
+  if (!state.conn) { toast('Publishing only works on the live site’s /admin page.'); return; }
   const items = summarise();
   $('#publish-summary').replaceChildren(...(items.length ? items : ['Content changes']).map((t) => h('li', t)));
   const f = $('#form-publish');
@@ -902,7 +866,6 @@ document.addEventListener('click', () => { menu.hidden = true; });
 menu.addEventListener('click', async (e) => {
   const act = e.target.dataset?.act;
   if (!act) return;
-  if (act === 'connect') openConnect();
   if (act === 'reload') {
     if (isDirty() && !confirm('Reloading will discard your unpublished changes. Continue?')) return;
     store.del('cms-draft'); await idb.clear(); state.pending.clear(); state.open.clear();

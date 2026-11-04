@@ -29,16 +29,31 @@ Your edits are saved as a draft in that browser until you press **Publish**.
 Publishing makes one commit to `main` on GitHub with the new `content.json`, a regenerated
 `index.html` and any new images. Vercel then deploys it automatically, usually within a minute.
 
-### First-time setup
+### Signing in
 
-The CMS publishes with a GitHub token that stays in your browser:
+`/admin` is protected by a password. Nothing in the CMS is sent to a browser until the
+right password is entered, and you stay signed in for 30 days on that device
+(**More → Sign out** to sign out). Changing the password signs every device out.
 
-1. Go to [GitHub → Fine-grained tokens → Generate new token](https://github.com/settings/personal-access-tokens/new).
-2. **Repository access:** only `jamingalea/jamingalea-com`.
-3. **Permissions → Repository → Contents:** Read and write.
-4. In the CMS, click **Not connected** (top left) and paste the token.
+Publishing goes through Vercel, which uses a GitHub token kept in your Vercel settings.
+The token never reaches the browser.
 
-Repeat on each device you edit from. Use **Forget token** on shared computers.
+### First-time setup (once)
+
+1. **Create the GitHub token.** Go to [GitHub → Fine-grained tokens → Generate new token](https://github.com/settings/personal-access-tokens/new).
+   - **Token name:** e.g. `Portfolio CMS`. **Expiration:** your choice (a year is sensible).
+   - **Repository access:** *Only select repositories* → `jamingalea/jamingalea-com`.
+   - **Permissions → Repository permissions → Contents:** Read and write.
+   - Generate it and copy it.
+2. **Add two settings in Vercel.** Project → **Settings → Environment Variables**:
+   - `GITHUB_TOKEN`: paste the token. Tick **Sensitive**.
+   - `CMS_PASSWORD`: the password you'll type to sign in. Make it long, e.g. four random words.
+3. **Redeploy** (Deployments → ⋯ on the latest → Redeploy) so the settings take effect.
+
+Optional settings: `CMS_REPO` (default `jamingalea/jamingalea-com`) and `CMS_BRANCH` (default `main`).
+
+When the GitHub token expires, create a new one and replace `GITHUB_TOKEN` in Vercel.
+Until both settings exist, `/admin` shows a "not set up yet" page and nothing else.
 
 ### Writing text
 
@@ -55,6 +70,7 @@ Repeat on each device you edit from. Use **Forget token** on shared computers.
 | `site.css`, `site.js` | Page styles and the small scroll effects |
 | `index.html` | Generated. Don't edit by hand |
 | `admin/` | The CMS |
+| `middleware.js` | Password protection for `/admin`, and publishing to GitHub |
 | `images/`, `fonts/` | Assets |
 
 If you edit `content.json` by hand, regenerate the page with:
