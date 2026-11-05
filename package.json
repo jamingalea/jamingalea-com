@@ -1,0 +1,11 @@
+{
+  "name": "jamingalea-com",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:html": "node build.mjs"
+  },
+  "dependencies": {
+    "@vercel/functions": "3.10.6"
+  }
+}
