@@ -9,12 +9,29 @@ const isExternal = (url) => /^https?:\/\//i.test(url);
 const linkAttrs = (url) =>
   `href="${esc(url)}"` + (isExternal(url) ? ' target="_blank" rel="noopener"' : '');
 
-// Inline formatting: [label](url) becomes a link, single newlines become <br>.
+// Inline formatting (what the CMS editor writes):
+//   [label](url)  link        **text**  bold        _text_ or *text*  italic
+//   \*  \_  \[  \]  \\        a literal character    a single newline  line break
+const LITERAL = /\\([\\*_[\]])/g;
 export function inline(text) {
-  return esc(text)
+  const lit = [];
+  const s = esc(String(text ?? '').replace(LITERAL, (_, c) => `\u0000${lit.push(c) - 1}\u0000`))
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, url) =>
       `<a ${linkAttrs(url.replace(/&amp;/g, '&'))}>${label}</a>`)
+    .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^\w*])\*(?=[^\s*])([\s\S]*?[^\s*])\*(?![\w*])/g, '$1<em>$2</em>')
+    .replace(/(^|\W)_(?=\S)([\s\S]*?\S)_(?!\w)/g, '$1<em>$2</em>')
     .replace(/\n/g, '<br>');
+  return s.replace(/\u0000(\d+)\u0000/g, (_, i) => esc(lit[i]));
+}
+
+/** The text without any formatting marks (for meta descriptions). */
+export function plainText(text) {
+  return String(text ?? '')
+    .replace(/\[([^\]]+)\]\([^)\s]+\)/g, '$1')
+    .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '$1')
+    .replace(/(^|\W)[_*](?=\S)([\s\S]*?\S)[_*](?!\w)/g, '$1$2')
+    .replace(LITERAL, '$1');
 }
 
 // Blank lines separate paragraphs.
@@ -210,7 +227,7 @@ export function renderCaseStudy(c, p, opts = {}) {
   if (p.url) meta.push({ label: 'Website', value: `[${p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}](${p.url})` });
   const heroImage = cs.heroImage || p.image;
   const summary = cs.summary || p.text;
-  const description = (cs.seoDescription || summary || '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const description = plainText(cs.seoDescription || summary || '').replace(/\s+/g, ' ').trim().slice(0, 300);
 
   return `${head(c, {
     path: caseStudyPath(p),
