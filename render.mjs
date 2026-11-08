@@ -35,16 +35,50 @@ const ARROW_RIGHT =
 const defaultAsset = (p) => (!p ? '' : /^(https?:|data:|blob:|\/)/.test(p) ? p : '/' + p);
 
 /* ---------- case studies ---------- */
+// content.caseStudies = [{ id, title, project, enabled, unlisted, summary, heroImage, … }]
+// `project` is the id of the homepage project it belongs to. A listed case study is
+// reached from that project; an unlisted one is only reachable by its link.
 
-/** True when a project has a case study page that should be published. */
-export const hasCaseStudy = (p) => !!(p && !p.hidden && p.id && p.caseStudy && p.caseStudy.enabled);
-export const caseStudyPath = (p) => `/work/${p.id}/`;
+/** Moves case studies from the old shape (project.caseStudy) to content.caseStudies. */
+export function migrate(c) {
+  c.caseStudies ||= [];
+  for (const p of c.projects || []) {
+    if (!p.caseStudy) continue;
+    const { enabled, ...rest } = p.caseStudy;
+    if (!c.caseStudies.some((cs) => cs.project === p.id)) {
+      c.caseStudies.push({ id: p.id, title: '', project: p.id, enabled: !!enabled, unlisted: false, ...rest });
+    }
+    delete p.caseStudy;
+  }
+  return c;
+}
+
+export const caseStudyPath = (cs) => `/work/${cs.id}/`;
+export const projectOf = (c, cs) => (cs && cs.project ? (c.projects || []).find((p) => p.id === cs.project) : null) || null;
+export const caseStudyTitle = (c, cs) => cs.title || projectOf(c, cs)?.title || 'Untitled case study';
+
+/** Why a case study isn't on the site, or '' when it is. */
+export function caseStudyProblem(c, cs) {
+  if (!cs.enabled) return 'draft';
+  if (!cs.id) return 'no-address';
+  if (cs.unlisted) return projectOf(c, cs) || cs.title ? '' : 'no-title';
+  const p = projectOf(c, cs);
+  if (!p) return 'no-project';
+  if (p.hidden) return 'project-hidden';
+  return '';
+}
+export const isLive = (c, cs) => !caseStudyProblem(c, cs);
+
+/** The live, listed case study a homepage project links to, if any. */
+export const caseStudyFor = (c, p) =>
+  (c.caseStudies || []).find((cs) => cs.project === p.id && !cs.unlisted && isLive(c, cs)) || null;
 
 /** Every file the site consists of: [{ path, html }]. */
 export function renderPages(c, opts = {}) {
+  c = migrate(JSON.parse(JSON.stringify(c)));
   const pages = [{ path: 'index.html', html: renderSite(c, opts) }];
-  for (const p of c.projects || []) {
-    if (hasCaseStudy(p)) pages.push({ path: `work/${p.id}/index.html`, html: renderCaseStudy(c, p, opts) });
+  for (const cs of c.caseStudies) {
+    if (isLive(c, cs)) pages.push({ path: `work/${cs.id}/index.html`, html: renderCaseStudy(c, cs, opts) });
   }
   return pages;
 }
@@ -65,7 +99,7 @@ function head(c, page, opts) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(page.title)}</title>
 <meta name="description" content="${esc(page.description)}">
-${url ? `<link rel="canonical" href="${esc(url)}">\n<meta property="og:url" content="${esc(url)}">` : ''}
+${page.noindex ? '<meta name="robots" content="noindex">\n' : ''}${url ? `<link rel="canonical" href="${esc(url)}">\n<meta property="og:url" content="${esc(url)}">` : ''}
 <meta property="og:type" content="${page.type || 'website'}">
 <meta property="og:title" content="${esc(page.ogTitle || page.title)}">
 <meta property="og:description" content="${esc(page.ogDescription || page.description)}">
@@ -124,9 +158,10 @@ export function focusStyle(f) {
   return ` style="object-position:${x}% ${y}%;transform-origin:${x}% ${y}%"`;
 }
 
-function project(p, asset) {
-  const cs = hasCaseStudy(p);
-  const href = cs ? caseStudyPath(p) : p.url;
+function project(p, asset, c) {
+  const study = caseStudyFor(c, p);
+  const cs = !!study;
+  const href = cs ? caseStudyPath(study) : p.url;
   let img = p.image
     ? `<img src="${esc(asset(p.image))}" alt="${esc(p.imageAlt || '')}"${focusStyle(p.imageFocus)} loading="lazy" decoding="async">`
     : '';
@@ -169,8 +204,8 @@ export function renderSite(c, opts = {}) {
 </header>
 <main>
   <section class="work" aria-label="Selected work">
-    <div class="work__col work__col--left">${left.map((p) => project(p, asset)).join('')}</div>
-    <div class="work__col work__col--right">${right.map((p) => project(p, asset)).join('')}</div>
+    <div class="work__col work__col--left">${left.map((p) => project(p, asset, c)).join('')}</div>
+    <div class="work__col work__col--right">${right.map((p) => project(p, asset, c)).join('')}</div>
   </section>
   ${hlItems.length ? `<section class="highlights reveal" aria-label="${esc(hl.title || 'Highlights')}">
     <h2 class="section-title">${esc(hl.title)}</h2>
@@ -209,32 +244,37 @@ function block(b, asset) {
   }
 }
 
-export function renderCaseStudy(c, p, opts = {}) {
+export function renderCaseStudy(c, cs, opts = {}) {
   const asset = opts.asset || defaultAsset;
-  const cs = p.caseStudy || {};
+  c = migrate(c);
+  const p = projectOf(c, cs) || {};
   const intro = c.intro || {};
   const site = c.site || {};
-  const others = (c.projects || []).filter(hasCaseStudy);
-  const next = others.length > 1 ? others[(others.indexOf(p) + 1) % others.length] : null;
+  // "Next case study" only cycles through listed ones, so unlisted pages stay private.
+  const listed = c.caseStudies.filter((x) => !x.unlisted && isLive(c, x));
+  const at = listed.indexOf(cs);
+  const next = at === -1 ? listed[0] || null : listed.length > 1 ? listed[(at + 1) % listed.length] : null;
   const meta = (cs.meta || []).filter((m) => m.label && m.value);
   if (p.url) meta.push({ label: 'Website', value: `[${p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}](${p.url})` });
+  const title = caseStudyTitle(c, cs);
   const heroImage = cs.heroImage || p.image;
   const summary = cs.summary || p.text;
   const description = (cs.seoDescription || summary || '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 300);
 
   return `${head(c, {
-    path: caseStudyPath(p),
+    path: caseStudyPath(cs),
     type: 'article',
-    title: cs.seoTitle || `${p.title} — ${intro.name || site.title || ''}`.replace(/ — $/, ''),
+    title: cs.seoTitle || `${title} — ${intro.name || site.title || ''}`.replace(/ — $/, ''),
     description,
     ogImage: cs.ogImage || heroImage,
+    noindex: !!cs.unlisted,
   }, opts)}
 <body class="cs">
 <nav class="cs-nav"><a href="/">${esc(intro.name || 'Home')}</a></nav>
 <main>
   <header class="cs-head reveal">
     <div class="cs-head__main">
-      <h1 class="cs-head__title">${esc(p.title)}</h1>
+      <h1 class="cs-head__title">${esc(title)}</h1>
       <div class="cs-head__summary">${paragraphs(summary)}</div>
       ${tags(p.tags)}
     </div>
@@ -243,7 +283,7 @@ export function renderCaseStudy(c, p, opts = {}) {
   ${heroImage ? `<div class="cs-hero reveal">${figure(heroImage, cs.heroAlt || p.imageAlt, '', asset)}</div>` : ''}
   ${(cs.blocks || []).filter((b) => !b.hidden).map((b) => block(b, asset)).join('\n  ')}
   <nav class="cs-next reveal" aria-label="More work">
-    ${next ? `<span class="section-title">Next case study</span><a href="${esc(caseStudyPath(next))}">${esc(next.title)}${ARROW_RIGHT}</a>` : ''}
+    ${next ? `<span class="section-title">Next case study</span><a href="${esc(caseStudyPath(next))}">${esc(caseStudyTitle(c, next))}${ARROW_RIGHT}</a>` : ''}
     <a class="cs-next__home" href="/">Back to all work</a>
   </nav>
 </main>

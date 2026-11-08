@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite, renderCaseStudy, renderPages, hasCaseStudy } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf } from '/render.mjs';
 
 /* ---------- small helpers ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -103,8 +103,8 @@ const state = {
   pending: new Map(),     // path -> { blob, url }
   tab: store.get('cms-tab', 'projects'),
   open: new Set(),        // expanded cards (object refs)
-  caseFor: null,          // project whose case study is being edited
-  previewPage: 'home',    // 'home' or a project id
+  caseFor: null,          // case study being edited (Case studies tab)
+  previewPage: 'home',    // 'home' or a case study id
   device: store.get('cms-device', 'desktop'),
 };
 
@@ -160,7 +160,7 @@ async function load({ keepDraft = true } = {}) {
     toast(`Couldn't load from GitHub: ${e.message} Showing the site's current content instead.`, 7000);
     base = await loadFromSite();
   }
-  state.published = base.content;
+  state.published = migrate(base.content); // older content kept case studies inside projects
   state.publishedSha = base.sha;
 
   const draft = keepDraft ? store.get('cms-draft', null) : null;
@@ -184,10 +184,20 @@ async function load({ keepDraft = true } = {}) {
 
 function normalise(c) {
   c.site ||= {}; c.intro ||= {}; c.projects ||= [];
+  migrate(c);
   c.highlights ||= { title: 'Other highlights', items: [] }; c.highlights.items ||= [];
   c.footer ||= { title: 'More information', links: [] }; c.footer.links ||= [];
   for (const p of c.projects) { p.tags ||= []; p.column ||= 'left'; p.id ||= uniqueId(p.title, p); }
   for (const i of c.highlights.items) i.tags ||= [];
+  for (const cs of c.caseStudies) { cs.meta ||= []; cs.blocks ||= []; cs.id ||= uniqueSlug(caseStudyTitle(c, cs), cs); }
+}
+
+function uniqueSlug(title, self) {
+  const base = slugify(title);
+  const taken = new Set((state.content?.caseStudies || []).filter((x) => x !== self).map((x) => x.id));
+  let id = base, n = 2;
+  while (taken.has(id)) id = `${base}-${n++}`;
+  return id;
 }
 
 function uniqueId(title, self) {
@@ -249,20 +259,20 @@ function renderPreview() {
     } catch { /* ignore */ }
   };
   const opts = { asset: assetUrl, headExtra: PREVIEW_HEAD };
-  const p = state.previewPage !== 'home' && state.content.projects.find((x) => x.id === state.previewPage);
-  frame.srcdoc = p ? renderCaseStudy(state.content, p, opts) : renderSite(state.content, opts);
+  const cs = state.previewPage !== 'home' && state.content.caseStudies.find((x) => x.id === state.previewPage);
+  frame.srcdoc = cs ? renderCaseStudy(state.content, cs, opts) : renderSite(state.content, opts);
   updatePageSelect();
 }
 
-// The preview's page picker lists the homepage and every project that has a case study.
+// The preview's page picker lists the homepage and every case study.
 function updatePageSelect() {
   const sel = $('#preview-page');
-  const projects = state.content.projects.filter((p) => p.caseStudy);
-  if (state.previewPage !== 'home' && !projects.some((p) => p.id === state.previewPage)) state.previewPage = 'home';
+  const c = state.content, list = c.caseStudies;
+  if (state.previewPage !== 'home' && !list.some((x) => x.id === state.previewPage)) state.previewPage = 'home';
   sel.replaceChildren(h('option', { value: 'home' }, 'Homepage'),
-    ...projects.map((p) => h('option', { value: p.id }, `Case study: ${p.title}${hasCaseStudy(p) ? '' : ' (draft)'}`)));
+    ...list.map((x) => h('option', { value: x.id }, `Case study: ${caseStudyTitle(c, x)}${isLive(c, x) ? (x.unlisted ? ' (unlisted)' : '') : ' (draft)'}`)));
   sel.value = state.previewPage;
-  sel.hidden = !projects.length;
+  sel.hidden = !list.length;
 }
 function showPreviewPage(page) {
   if (state.previewPage === page) return;
@@ -381,9 +391,15 @@ function imageField(label, obj, key, kind, opts = {}) {
     pv.title = v ? '' : 'No image yet';
     path.textContent = v ? (state.pending.has(v) ? 'New image (publish to upload)' : v) : '';
     removeBtn.hidden = !v || opts.required;
-    focus?.update();
+    if (opts.focusKey) {
+      const f = obj[opts.focusKey];
+      pv.style.backgroundPosition = f ? `${f.x}% ${f.y}%` : '';
+      cropBtn.hidden = !v;
+      cropNote.textContent = v ? (f ? `Focal point set (${Math.round(f.x)}% across, ${Math.round(f.y)}% down)` : 'Cropped around the centre') : '';
+    }
   };
-  const focus = opts.focusKey ? focusPicker(obj, opts.focusKey, () => obj[key]) : null;
+  const cropBtn = h('button.btn.btn--sm', { type: 'button', onclick: () => openFocusDialog(obj, opts.focusKey, assetUrl(obj[key]), upd) }, 'Adjust crop…');
+  const cropNote = h('span.hint');
   const take = async (f) => {
     if (!f) return;
     try {
@@ -399,32 +415,37 @@ function imageField(label, obj, key, kind, opts = {}) {
   const wrap = h('div.imgfield', pv, h('div.imgfield__side',
     h('span.imgfield__label', label),
     opts.hint && h('span.hint', opts.hint),
-    h('div.row', h('button.btn.btn--sm', { type: 'button', onclick: () => file.click() }, 'Upload…'), removeBtn),
-    path, file));
+    h('div.row', h('button.btn.btn--sm', { type: 'button', onclick: () => file.click() }, 'Upload…'), opts.focusKey && cropBtn, removeBtn),
+    opts.focusKey && cropNote, path, file));
   wrap.addEventListener('dragover', (e) => { e.preventDefault(); wrap.classList.add('drop'); });
   wrap.addEventListener('dragleave', () => wrap.classList.remove('drop'));
   wrap.addEventListener('drop', (e) => { e.preventDefault(); wrap.classList.remove('drop'); take(e.dataTransfer.files[0]); });
   upd();
-  return focus ? h('div', wrap, focus.el) : wrap;
+  return wrap;
 }
 
-// Click or drag on the full image to choose the spot that must stay visible when
-// the site crops it. Stored as obj[key] = { x, y } in percent; centre is the default.
+// "Adjust crop…" dialog: click or drag on the full image to choose the spot that must
+// stay visible when the site crops it. Stored as obj[key] = { x, y } in percent;
+// centre is the default and isn't stored. Changes apply (and preview) as you drag.
 const CROPS = [['Landscape', '1896 / 1456'], ['Square', '1 / 1'], ['Tall', '3 / 4'], ['Wide', '16 / 7']];
-function focusPicker(obj, key, src) {
-  const img = h('img', { alt: '', draggable: 'false' });
+function openFocusDialog(obj, key, url, onChange) {
+  const before = obj[key] ? { ...obj[key] } : null;
+  const img = h('img', { alt: '', draggable: 'false', src: url });
   const dot = h('span.focus__dot');
   const stage = h('div.focus__stage', { tabindex: 0, role: 'slider', 'aria-label': 'Focal point. Use the arrow keys to move it.' }, img, dot);
   const crops = CROPS.map(([label, ratio]) => {
-    const box = h('div.focus__crop', { style: { aspectRatio: ratio } });
+    const box = h('div.focus__crop', { style: { aspectRatio: ratio, backgroundImage: `url("${url}")` } });
     return { box, el: h('figure.focus__cropfig', box, h('figcaption', label)) };
   });
   const coords = h('span.hint');
-  const reset = h('button.btn.btn--sm.btn--ghost', { type: 'button' }, 'Reset to centre');
-  const el = h('div.focus',
-    h('div.focus__head', h('span.imgfield__label', 'Focal point'), coords, h('span.spacer'), reset),
-    h('span.hint', 'Click or drag on the image to mark what must stay in view. When the site crops the image to fit a screen, it crops around this point.'),
-    h('div.focus__body', stage, h('div.focus__crops', crops.map((c) => c.el))));
+  const reset = h('button.btn.btn--ghost', { type: 'button' }, 'Reset to centre');
+  const cancel = h('button.btn.btn--ghost', { type: 'button' }, 'Cancel');
+  const done = h('button.btn.btn--primary', { type: 'button' }, 'Done');
+  const dlg = h('dialog.dlg.focus-dlg', { 'aria-label': 'Adjust crop' },
+    h('div.focus__head', h('h2', 'Focal point'), coords),
+    h('p.hint', 'Click or drag on the image to mark what must stay in view. When the site crops the image to fit a screen, it crops around this point.'),
+    h('div.focus__body', stage, h('div.focus__crops', crops.map((c) => c.el))),
+    h('div.dlg__actions', reset, h('span.spacer'), cancel, done));
   const get = () => {
     const f = obj[key];
     return f && typeof f === 'object' ? { x: +f.x, y: +f.y } : { x: 50, y: 50 };
@@ -437,11 +458,11 @@ function focusPicker(obj, key, src) {
     stage.setAttribute('aria-valuetext', coords.textContent);
     reset.disabled = x === 50 && y === 50;
   };
+  const write = (f) => { if (f) obj[key] = f; else delete obj[key]; draw(); changed(); onChange?.(); };
   const set = (x, y) => {
     const r = (v) => Math.round(Math.min(100, Math.max(0, v)) * 10) / 10;
     x = r(x); y = r(y);
-    if (x === 50 && y === 50) delete obj[key]; else obj[key] = { x, y };
-    draw(); changed();
+    write(x === 50 && y === 50 ? null : { x, y });
   };
   const fromEvent = (e) => {
     const b = img.getBoundingClientRect();
@@ -460,18 +481,14 @@ function focusPicker(obj, key, src) {
     set(x + d[0] * step, y + d[1] * step);
   });
   reset.addEventListener('click', () => set(50, 50));
-  return {
-    el,
-    update() {
-      const v = src();
-      el.hidden = !v;
-      if (!v) return;
-      const url = assetUrl(v);
-      if (img.getAttribute('src') !== url) img.src = url;
-      for (const c of crops) c.box.style.backgroundImage = `url("${url}")`;
-      draw();
-    },
-  };
+  cancel.addEventListener('click', () => { write(before); dlg.close(); });
+  done.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); }); // backdrop
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  draw();
+  dlg.showModal();
+  stage.focus();
 }
 
 function tagsField(list) {
@@ -529,9 +546,10 @@ const BLOCK_TYPES = {
   stats: { label: 'Numbers', make: () => ({ type: 'stats', heading: '', items: [{ value: '', label: '' }, { value: '', label: '' }, { value: '', label: '' }] }) },
 };
 
-function newCaseStudy() {
+function newCaseStudy(projectId = '') {
   return {
-    enabled: false, summary: '', heroImage: '', heroAlt: '',
+    id: '', title: '', project: projectId, enabled: false, unlisted: false,
+    summary: '', heroImage: '', heroAlt: '',
     meta: [{ label: 'Role', value: '' }, { label: 'Year', value: '' }],
     blocks: [
       { type: 'text', heading: 'The challenge', text: '' },
@@ -541,23 +559,44 @@ function newCaseStudy() {
   };
 }
 
-function openCaseStudy(p) {
-  p.caseStudy ||= newCaseStudy();
-  state.caseFor = p;
-  state.tab = 'projects';
-  $('#panel').scrollTop = 0;
-  changed(); renderPanel();
-  showPreviewPage(p.id);
+function createCaseStudy(projectId = '') {
+  const c = state.content;
+  const cs = newCaseStudy(projectId);
+  cs.id = uniqueSlug(projectId ? caseStudyTitle(c, cs) : 'new-case-study', cs);
+  c.caseStudies.push(cs);
+  openCaseStudy(cs);
 }
 
+function openCaseStudy(cs) {
+  state.caseFor = cs;
+  state.tab = 'caseStudies'; store.set('cms-tab', state.tab);
+  $('#panel').scrollTop = 0;
+  changed(); renderPanel();
+  showPreviewPage(cs.id);
+}
+
+// Short status for lists: [label, tone].
+function caseStudyStatus(cs) {
+  const c = state.content;
+  switch (caseStudyProblem(c, cs)) {
+    case 'draft': return ['Draft', ''];
+    case 'no-project': return ['Needs a project', 'warn'];
+    case 'project-hidden': return ['Project is hidden', 'warn'];
+    case 'no-title': return ['Needs a title', 'warn'];
+    case 'no-address': return ['Needs a page address', 'warn'];
+    default: return cs.unlisted ? ['Live · unlisted', 'ok'] : ['Live', 'ok'];
+  }
+}
+const statusBadge = (cs) => { const [label, tone] = caseStudyStatus(cs); return h(`span.status${tone ? '.status--' + tone : ''}`, label); };
+
+// On a project card: one line linking to its case study.
 function caseStudyEntry(p) {
-  const cs = p.caseStudy;
-  const status = !cs ? 'Not started'
-    : hasCaseStudy(p) ? `Published at /work/${p.id}/`
-    : 'Draft: not on the site yet';
+  const cs = state.content.caseStudies.find((x) => x.project === p.id);
   return h('div.cs-entry',
-    h('div', h('strong', 'Case study page'), h('span.hint', status)),
-    h('button.btn.btn--sm', { type: 'button', onclick: () => openCaseStudy(p) }, cs ? 'Edit case study →' : 'Start case study →'));
+    h('div', h('strong', 'Case study'), cs ? statusBadge(cs) : h('span.hint', 'None yet')),
+    cs
+      ? h('button.btn.btn--sm', { type: 'button', onclick: () => openCaseStudy(cs) }, 'Edit →')
+      : h('button.btn.btn--sm', { type: 'button', onclick: () => createCaseStudy(p.id) }, 'Create →'));
 }
 
 function blockBody(b) {
@@ -601,9 +640,9 @@ function blockTitle(b) {
   return first(b.heading) || first(b.text) || first(b.caption) || (b.image && 'Image') || '';
 }
 
-function caseStudyPanel(p) {
-  const cs = p.caseStudy;
-  cs.meta ||= []; cs.blocks ||= [];
+function caseStudyPanel(cs) {
+  const c = state.content;
+  const p = projectOf(c, cs);
   const blocks = cs.blocks;
   const metaBox = h('div');
   const drawMeta = () => metaBox.replaceChildren(...cs.meta.map((m, i) => h('div.subcard',
@@ -616,33 +655,68 @@ function caseStudyPanel(p) {
   drawMeta();
 
   const addBlock = (type) => { const b = BLOCK_TYPES[type].make(); blocks.push(b); state.open.add(b); changed(); renderPanel(); };
-  const slug = h('input', { type: 'text', value: p.id });
+  const slug = h('input', { type: 'text', value: cs.id });
+  // Until it has been published, the address follows the title unless edited by hand.
+  const wasPublished = (state.published.caseStudies || []).some((x) => x.id === cs.id);
+  let autoSlug = !wasPublished && (cs.id === uniqueSlug(caseStudyTitle(c, cs), cs) || /^new-case-study(-\d+)?$/.test(cs.id));
+  slug.addEventListener('input', () => { autoSlug = false; });
   slug.addEventListener('change', () => {
-    const next = uniqueId(slug.value, p);
-    if (state.previewPage === p.id) state.previewPage = next;
-    p.id = next; slug.value = next; changed(); renderPanel();
+    const next = uniqueSlug(slug.value || caseStudyTitle(c, cs), cs);
+    if (state.previewPage === cs.id) state.previewPage = next;
+    cs.id = next; slug.value = next; changed(); renderPanel();
   });
 
-  return [
-    h('button.back', { type: 'button', onclick: () => { state.caseFor = null; renderPanel(); showPreviewPage('home'); } }, '← All projects'),
-    h('h2.cs-title', p.title || 'Untitled'),
-    h('p.intro', 'A page with more detail about this project. The text from the homepage is used wherever you leave a field empty.'),
+  // Project picker: each project can have one case study.
+  const projSel = h('select',
+    h('option', { value: '' }, '— No project —'),
+    c.projects.map((x) => {
+      const other = c.caseStudies.find((o) => o !== cs && o.project === x.id);
+      return h('option', { value: x.id, disabled: !!other }, `${x.title || 'Untitled'}${x.hidden ? ' (hidden)' : ''}${other ? ' — has a case study' : ''}`);
+    }));
+  projSel.value = cs.project || '';
+  projSel.addEventListener('change', () => { cs.project = projSel.value; changed(); renderPanel(); });
 
-    h('label.check', { style: { marginBottom: '8px', fontWeight: 500 } },
-      bind(cs, 'enabled', h('input', { type: 'checkbox', checked: !!cs.enabled }), { onInput: () => renderPanel() }),
-      'Publish this case study'),
-    h('p.hint', { style: { margin: '0 0 24px' } }, cs.enabled
-      ? `When you publish, the page goes live at /work/${p.id}/ and the project on the homepage links to it.`
-      : 'Off: you can write and preview it, but it stays off the site until you switch this on.'),
+  const problem = caseStudyProblem(c, cs);
+  const where = `/work/${cs.id}/`;
+  const publishHint = {
+    draft: 'Off: you can write and preview it, but it stays off the site until you switch this on.',
+    'no-project': 'Choose a project above, or turn on “Unlisted”, before this can go on the site.',
+    'project-hidden': 'Its project is hidden on the homepage, so this stays off the site. Show the project or turn on “Unlisted”.',
+    'no-title': 'Give it a title above before it can go on the site.',
+    'no-address': 'Give it a page address below before it can go on the site.',
+  }[problem] || (cs.unlisted
+    ? `When you publish, the page goes live at ${where}. Nothing on the site links to it, and search engines are asked not to list it.`
+    : `When you publish, the page goes live at ${where} and “${p?.title}” on the homepage links to it.`);
+
+  return [
+    h('button.back', { type: 'button', onclick: () => { state.caseFor = null; renderPanel(); showPreviewPage('home'); } }, '← All case studies'),
+    h('div.row', { style: { marginBottom: '8px' } }, h('h2.cs-title', { style: { margin: 0 } }, caseStudyTitle(c, cs)), statusBadge(cs)),
+    h('p.intro', 'A page with more detail about a project. Wherever you leave a field empty, the project’s homepage text and image are used.'),
+
+    h('h3.group', 'Page'),
+    h('label', 'Project', projSel, h('small', 'The homepage project this case study belongs to. Its title, image, tags and link fill in anything left empty here.')),
+    text('Title', cs, 'title', { placeholder: p?.title || 'e.g. Redesigning checkout', hint: p ? 'Leave empty to use the project title.' : '', onInput: () => {
+      $('.cs-title').textContent = caseStudyTitle(c, cs);
+      if (!autoSlug) return;
+      const next = uniqueSlug(caseStudyTitle(c, cs), cs);
+      if (state.previewPage === cs.id) state.previewPage = next;
+      cs.id = next; slug.value = next;
+    } }),
     h('label', 'Page address', h('div.row', h('span.muted', '/work/'), slug, h('span.muted', '/')), h('small', 'Letters, numbers and dashes. Changing it changes the link.')),
 
+    h('div.toggles',
+      h('label.check', bind(cs, 'enabled', h('input', { type: 'checkbox', checked: !!cs.enabled }), { onInput: () => renderPanel() }), 'Publish this case study'),
+      h('label.check', bind(cs, 'unlisted', h('input', { type: 'checkbox', checked: !!cs.unlisted }), { onInput: () => renderPanel() }),
+        'Unlisted', h('span.hint', '— only people with the link can find it')),
+      h('p.hint' + (problem && problem !== 'draft' ? '.warn' : ''), publishHint)),
+
     h('h3.group', 'Introduction'),
-    area('Summary', cs, 'summary', { rows: 5, placeholder: 'Leave empty to use the homepage description.' }),
-    imageField('Main image', cs, 'heroImage', 'project', { hint: 'Leave empty to use the homepage image.', onChange: renderPanel, nameHint: () => p.title }),
+    area('Summary', cs, 'summary', { rows: 5, placeholder: p ? 'Leave empty to use the homepage description.' : '' }),
+    imageField('Main image', cs, 'heroImage', 'project', { hint: p ? 'Leave empty to use the homepage image.' : '', onChange: renderPanel, nameHint: () => caseStudyTitle(c, cs) }),
     text('Main image description (alt text)', cs, 'heroAlt'),
 
     h('h3.group', 'Project details'),
-    h('p.hint', 'Shown beside the summary, e.g. Role, Year, Team, Platform. The project link is added automatically.'),
+    h('p.hint', 'Shown beside the summary, e.g. Role, Year, Team, Platform. The project’s link is added automatically.'),
     metaBox,
 
     h('h3.group', 'Content'),
@@ -659,9 +733,22 @@ function caseStudyPanel(p) {
       Object.entries(BLOCK_TYPES).map(([type, t]) => h('button.btn.btn--sm', { type: 'button', onclick: () => addBlock(type) }, `+ ${t.label}`))),
 
     h('h3.group', 'Search & sharing'),
-    text('Page title', cs, 'seoTitle', { placeholder: `${p.title} — ${state.content.intro?.name || ''}`, limit: 60 }),
+    text('Page title', cs, 'seoTitle', { placeholder: `${caseStudyTitle(c, cs)} — ${c.intro?.name || ''}`, limit: 60 }),
     area('Description', cs, 'seoDescription', { rows: 3, limit: 160, hint: 'Leave empty to use the summary.' }),
-    imageField('Share image', cs, 'ogImage', 'og', { hint: 'Leave empty to use the main image. 1200 × 630 fits best.', nameHint: () => `${p.title} og` }),
+    imageField('Share image', cs, 'ogImage', 'og', { hint: 'Leave empty to use the main image. 1200 × 630 fits best.', nameHint: () => `${caseStudyTitle(c, cs)} og` }),
+
+    h('h3.group', 'Danger zone'),
+    h('div.row', { style: { marginBottom: '32px' } },
+      h('button.btn.btn--sm', { type: 'button', onclick: () => {
+        const copy = clone(cs); copy.title = `${caseStudyTitle(c, cs)} (copy)`; copy.project = ''; copy.enabled = false;
+        copy.id = uniqueSlug(copy.title, copy);
+        c.caseStudies.splice(c.caseStudies.indexOf(cs) + 1, 0, copy); openCaseStudy(copy);
+      } }, 'Duplicate'),
+      h('button.btn.btn--sm.btn--danger', { type: 'button', onclick: () => {
+        if (!confirm(`Delete the case study “${caseStudyTitle(c, cs)}”? You can still discard this before publishing.`)) return;
+        c.caseStudies.splice(c.caseStudies.indexOf(cs), 1);
+        state.caseFor = null; changed(); renderPanel(); showPreviewPage('home');
+      } }, 'Delete case study')),
   ];
 }
 
@@ -680,7 +767,7 @@ const panels = {
           canUp: k > 0, canDown: k < idx.length - 1,
           onMove: (d) => { const j = idx[k + d][1]; [list[i], list[j]] = [list[j], list[i]]; changed(); renderPanel(); },
           onDuplicate: () => { const copy = clone(p); copy.title = `${p.title} (copy)`; copy.id = uniqueId(copy.title); list.splice(i + 1, 0, copy); state.open.add(copy); changed(); renderPanel(); },
-          onDelete: () => { list.splice(i, 1); changed(); renderPanel(); },
+          onDelete: () => { list.splice(i, 1); for (const cs of c.caseStudies) if (cs.project === p.id) cs.project = ''; changed(); renderPanel(); },
           body: () => [
             text('Title', p, 'title', { onInput: () => { const t = $('.card__title', document.activeElement.closest('.card')); if (t) t.firstChild.textContent = p.title || 'Untitled'; } }),
             text('Link', p, 'url', { type: 'url', placeholder: 'https://… (optional)', hint: 'When set, the title links here and shows an arrow.' }),
@@ -706,6 +793,28 @@ const panels = {
       h('p.intro', 'Projects appear in two columns. Open a project to edit it; use the arrows to reorder, ◉ to hide without deleting.'),
       group('left', 'Left column', 'Large landscape images.'),
       group('right', 'Right column', 'Square images, starting a little lower.'),
+    ];
+  },
+
+  caseStudies() {
+    const c = state.content, list = c.caseStudies;
+    return [
+      h('p.intro', 'Longer pages about individual projects, at /work/…/. Link each one to a homepage project, or make it unlisted so only people with the link can see it.'),
+      list.length ? h('div.list', list.map((cs, i) => {
+        const p = projectOf(c, cs);
+        const thumb = cs.heroImage || p?.image;
+        const open = () => openCaseStudy(cs);
+        const row = h('div.card.cs-row', h('div.card__head', { role: 'button', tabindex: 0, onclick: open, onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } } },
+          thumb ? h('img.card__thumb', { src: assetUrl(thumb), alt: '' }) : imagePlaceholder('card__thumb'),
+          h('div.card__title', caseStudyTitle(c, cs), h('span.muted', p ? `Project: ${p.title}` : 'No project', ' · ', `/work/${cs.id}/`)),
+          statusBadge(cs),
+          h('div.card__tools',
+            h('button.icon-btn', { type: 'button', title: 'Move up', disabled: i === 0, onclick: (e) => { e.stopPropagation(); move(list, i, i - 1); } }, '↑'),
+            h('button.icon-btn', { type: 'button', title: 'Move down', disabled: i === list.length - 1, onclick: (e) => { e.stopPropagation(); move(list, i, i + 1); } }, '↓'))));
+        return row;
+      })) : h('p.hint', 'No case studies yet.'),
+      h('button.btn.add', { type: 'button', onclick: () => createCaseStudy() }, '+ New case study'),
+      list.length > 1 && h('p.hint', { style: { marginTop: '12px' } }, 'The order sets which case study each page suggests next.'),
     ];
   },
 
@@ -816,8 +925,9 @@ const panels = {
 function renderPanel() {
   const panel = $('#panel');
   const scroll = panel.scrollTop;
-  if (state.caseFor && !state.content.projects.includes(state.caseFor)) state.caseFor = null;
-  const content = state.caseFor && state.tab === 'projects' ? caseStudyPanel(state.caseFor) : panels[state.tab]();
+  if (state.caseFor && !state.content.caseStudies.includes(state.caseFor)) state.caseFor = null;
+  if (!panels[state.tab]) state.tab = 'projects';
+  const content = state.caseFor && state.tab === 'caseStudies' ? caseStudyPanel(state.caseFor) : panels[state.tab]();
   panel.replaceChildren(...[content].flat(Infinity).filter(Boolean));
   panel.scrollTop = scroll;
   $$('.tabs button').forEach((b) => b.classList.toggle('is-on', b.dataset.tab === state.tab));
@@ -840,6 +950,12 @@ function summarise() {
   for (const [k, p] of pa) if (!pb.has(k)) out.push(`Removed project “${p.title}”`);
   for (const [k, p] of pb) if (pa.has(k) && JSON.stringify(pa.get(k)) !== JSON.stringify(p)) out.push(`Edited project “${p.title}”`);
   if (JSON.stringify((a.projects || []).map((p) => p.id)) !== JSON.stringify((b.projects || []).map((p) => p.id)) && !out.length) out.push('Reordered projects');
+  const ca = new Map((a.caseStudies || []).map((x) => [x.id, x])), cb = new Map((b.caseStudies || []).map((x) => [x.id, x]));
+  for (const [k, x] of cb) {
+    if (!ca.has(k)) out.push(`Added case study “${caseStudyTitle(b, x)}”`);
+    else if (JSON.stringify(ca.get(k)) !== JSON.stringify(x)) out.push(`Edited case study “${caseStudyTitle(b, x)}”`);
+  }
+  for (const [k, x] of ca) if (!cb.has(k)) out.push(`Removed case study “${caseStudyTitle(a, x)}”`);
   if (JSON.stringify(a.intro) !== JSON.stringify(b.intro)) out.push('Edited intro');
   if (JSON.stringify(a.highlights) !== JSON.stringify(b.highlights)) out.push('Edited highlights');
   if (JSON.stringify(a.footer) !== JSON.stringify(b.footer)) out.push('Edited footer');
@@ -958,6 +1074,7 @@ menu.addEventListener('click', async (e) => {
 $$('.tabs button').forEach((b) => b.addEventListener('click', () => {
   state.tab = b.dataset.tab; store.set('cms-tab', state.tab);
   if (state.caseFor) { state.caseFor = null; showPreviewPage('home'); }
+  else if (state.tab !== 'caseStudies' && state.previewPage !== 'home') showPreviewPage('home');
   $('#panel').scrollTop = 0; renderPanel();
 }));
 // Light / dark interface toggle (starts from the system setting, then remembers the choice).
@@ -980,8 +1097,8 @@ labelThemeButton();
 
 $('#preview-page').addEventListener('change', (e) => {
   showPreviewPage(e.target.value);
-  const p = state.content.projects.find((x) => x.id === e.target.value);
-  if (p) { state.caseFor = p; state.tab = 'projects'; } else state.caseFor = null;
+  const cs = state.content.caseStudies.find((x) => x.id === e.target.value);
+  if (cs) { state.caseFor = cs; state.tab = 'caseStudies'; } else state.caseFor = null;
   $('#panel').scrollTop = 0; renderPanel();
 });
 $$('.bar__mid .seg').forEach((b) => b.addEventListener('click', () => {
