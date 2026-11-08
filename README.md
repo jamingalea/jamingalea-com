@@ -10,18 +10,27 @@ Open **https://jamingalea.com/admin/**. From there you can:
 - edit the intro text, every project, the “Other highlights” row and the footer links
 - add, duplicate, reorder, hide or delete projects and highlights
 - upload or replace images (large images are resized automatically)
+- set a focal point on project images (**Adjust crop…**): click the part that must stay in
+  view, and the site crops around it at every screen size
 - change the page title, description, share (OG) image, favicon and home-screen icon
 - see a live preview at desktop, tablet and phone sizes before publishing
 
 ### Case study pages
 
-Open a project and press **Start case study →**. A case study has a summary, project
-details (Role, Year…), a main image and a body built from blocks: Text, Image, Image row,
-Quote and Numbers. Pick a case study in the preview's page menu to see it.
+Case studies have their own **Case studies** tab. Create one there with **+ New case study**,
+or from a project with **Case study → Create →**. Each case study is linked to one homepage
+project. Its title, summary and main image fall back to that project's when left empty.
+A case study has a summary, project details (Role, Year…), a main image and a body built
+from blocks: Text, Image, Image row, Quote and Numbers. Pick a case study in the preview's
+page menu to see it.
 
-Case studies stay as drafts until you tick **Publish this case study**. Then publishing
-creates the page at `/work/<project>/`, and the project on the homepage links to it.
+Case studies stay as drafts until you tick **Publish this case study**. Publishing then
+creates the page at `/work/<address>/`, and the linked project on the homepage links to it.
 Switch it off again and the page is removed on the next publish.
+
+Tick **Unlisted** for a case study that only people with the link can see. It can be
+published without a project, nothing on the site links to it, it's left out of the
+"Next case study" links, and search engines are asked not to list it.
 
 The page styles are a plain starting point, in the "Case study pages" section of `site.css`.
 
