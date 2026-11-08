@@ -381,18 +381,21 @@ function imageField(label, obj, key, kind, opts = {}) {
     pv.title = v ? '' : 'No image yet';
     path.textContent = v ? (state.pending.has(v) ? 'New image (publish to upload)' : v) : '';
     removeBtn.hidden = !v || opts.required;
+    focus?.update();
   };
+  const focus = opts.focusKey ? focusPicker(obj, opts.focusKey, () => obj[key]) : null;
   const take = async (f) => {
     if (!f) return;
     try {
       const { path: p, w, h: hgt } = await addImage(f, kind, opts.nameHint?.() || label);
       obj[key] = p;
+      if (opts.focusKey) delete obj[opts.focusKey];
       if (opts.onSize && w) opts.onSize(w, hgt);
       upd(); changed(); opts.onChange?.();
     } catch (e) { toast(e.message || String(e)); }
   };
   file.addEventListener('change', () => { take(file.files[0]); file.value = ''; });
-  removeBtn.addEventListener('click', () => { obj[key] = ''; upd(); changed(); opts.onChange?.(); });
+  removeBtn.addEventListener('click', () => { obj[key] = ''; if (opts.focusKey) delete obj[opts.focusKey]; upd(); changed(); opts.onChange?.(); });
   const wrap = h('div.imgfield', pv, h('div.imgfield__side',
     h('span.imgfield__label', label),
     opts.hint && h('span.hint', opts.hint),
@@ -402,7 +405,73 @@ function imageField(label, obj, key, kind, opts = {}) {
   wrap.addEventListener('dragleave', () => wrap.classList.remove('drop'));
   wrap.addEventListener('drop', (e) => { e.preventDefault(); wrap.classList.remove('drop'); take(e.dataTransfer.files[0]); });
   upd();
-  return wrap;
+  return focus ? h('div', wrap, focus.el) : wrap;
+}
+
+// Click or drag on the full image to choose the spot that must stay visible when
+// the site crops it. Stored as obj[key] = { x, y } in percent; centre is the default.
+const CROPS = [['Landscape', '1896 / 1456'], ['Square', '1 / 1'], ['Tall', '3 / 4'], ['Wide', '16 / 7']];
+function focusPicker(obj, key, src) {
+  const img = h('img', { alt: '', draggable: 'false' });
+  const dot = h('span.focus__dot');
+  const stage = h('div.focus__stage', { tabindex: 0, role: 'slider', 'aria-label': 'Focal point. Use the arrow keys to move it.' }, img, dot);
+  const crops = CROPS.map(([label, ratio]) => {
+    const box = h('div.focus__crop', { style: { aspectRatio: ratio } });
+    return { box, el: h('figure.focus__cropfig', box, h('figcaption', label)) };
+  });
+  const coords = h('span.hint');
+  const reset = h('button.btn.btn--sm.btn--ghost', { type: 'button' }, 'Reset to centre');
+  const el = h('div.focus',
+    h('div.focus__head', h('span.imgfield__label', 'Focal point'), coords, h('span.spacer'), reset),
+    h('span.hint', 'Click or drag on the image to mark what must stay in view. When the site crops the image to fit a screen, it crops around this point.'),
+    h('div.focus__body', stage, h('div.focus__crops', crops.map((c) => c.el))));
+  const get = () => {
+    const f = obj[key];
+    return f && typeof f === 'object' ? { x: +f.x, y: +f.y } : { x: 50, y: 50 };
+  };
+  const draw = () => {
+    const { x, y } = get();
+    dot.style.left = `${x}%`; dot.style.top = `${y}%`;
+    for (const c of crops) c.box.style.backgroundPosition = `${x}% ${y}%`;
+    coords.textContent = x === 50 && y === 50 ? 'Centre' : `${Math.round(x)}% across, ${Math.round(y)}% down`;
+    stage.setAttribute('aria-valuetext', coords.textContent);
+    reset.disabled = x === 50 && y === 50;
+  };
+  const set = (x, y) => {
+    const r = (v) => Math.round(Math.min(100, Math.max(0, v)) * 10) / 10;
+    x = r(x); y = r(y);
+    if (x === 50 && y === 50) delete obj[key]; else obj[key] = { x, y };
+    draw(); changed();
+  };
+  const fromEvent = (e) => {
+    const b = img.getBoundingClientRect();
+    set(((e.clientX - b.left) / b.width) * 100, ((e.clientY - b.top) / b.height) * 100);
+  };
+  stage.addEventListener('pointerdown', (e) => { e.preventDefault(); stage.focus(); stage.setPointerCapture(e.pointerId); stage.classList.add('is-dragging'); fromEvent(e); });
+  stage.addEventListener('pointermove', (e) => { if (stage.hasPointerCapture(e.pointerId)) fromEvent(e); });
+  const end = () => stage.classList.remove('is-dragging');
+  stage.addEventListener('pointerup', end);
+  stage.addEventListener('pointercancel', end);
+  stage.addEventListener('keydown', (e) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const step = e.shiftKey ? 10 : 2, { x, y } = get();
+    set(x + d[0] * step, y + d[1] * step);
+  });
+  reset.addEventListener('click', () => set(50, 50));
+  return {
+    el,
+    update() {
+      const v = src();
+      el.hidden = !v;
+      if (!v) return;
+      const url = assetUrl(v);
+      if (img.getAttribute('src') !== url) img.src = url;
+      for (const c of crops) c.box.style.backgroundImage = `url("${url}")`;
+      draw();
+    },
+  };
 }
 
 function tagsField(list) {
@@ -617,7 +686,7 @@ const panels = {
             text('Link', p, 'url', { type: 'url', placeholder: 'https://… (optional)', hint: 'When set, the title links here and shows an arrow.' }),
             imageField('Image', p, 'image', 'project', {
               hint: col === 'left' ? 'Shown at 1896 × 1456 (landscape, cropped to fit).' : 'Shown square, cropped to fit.',
-              nameHint: () => p.title, onChange: renderPanel,
+              nameHint: () => p.title, onChange: renderPanel, focusKey: 'imageFocus',
             }),
             text('Image description (alt text)', p, 'imageAlt', { hint: 'Describes the image for screen readers and search engines.' }),
             area('Description', p, 'text', { rows: 8 }),

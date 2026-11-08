@@ -114,11 +114,21 @@ function tags(list) {
 
 /* ---------- homepage ---------- */
 
+// Focal point {x, y} in % → inline style that keeps that spot in view when the
+// image is cropped (object-fit: cover). Centre (the default) needs no style.
+export function focusStyle(f) {
+  if (!f || typeof f !== 'object') return '';
+  const n = (v) => Math.min(100, Math.max(0, Math.round(Number(v) * 10) / 10));
+  const x = n(f.x), y = n(f.y);
+  if (Number.isNaN(x) || Number.isNaN(y) || (x === 50 && y === 50)) return '';
+  return ` style="object-position:${x}% ${y}%;transform-origin:${x}% ${y}%"`;
+}
+
 function project(p, asset) {
   const cs = hasCaseStudy(p);
   const href = cs ? caseStudyPath(p) : p.url;
   let img = p.image
-    ? `<img src="${esc(asset(p.image))}" alt="${esc(p.imageAlt || '')}" loading="lazy" decoding="async">`
+    ? `<img src="${esc(asset(p.image))}" alt="${esc(p.imageAlt || '')}"${focusStyle(p.imageFocus)} loading="lazy" decoding="async">`
     : '';
   if (img) img = cs ? `<a class="project__media" href="${esc(href)}" tabindex="-1">${img}</a>` : `<div class="project__media">${img}</div>`;
   const id = p.id ? ` id="${esc(p.id)}"` : '';

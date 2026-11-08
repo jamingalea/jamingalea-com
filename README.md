@@ -10,6 +10,8 @@ Open **https://jamingalea.com/admin/**. From there you can:
 - edit the intro text, every project, the “Other highlights” row and the footer links
 - add, duplicate, reorder, hide or delete projects and highlights
 - upload or replace images (large images are resized automatically)
+- set a focal point on project images: click the part that must stay in view, and the
+  site crops around it at every screen size
 - change the page title, description, share (OG) image, favicon and home-screen icon
 - see a live preview at desktop, tablet and phone sizes before publishing
 
