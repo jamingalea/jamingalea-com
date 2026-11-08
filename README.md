@@ -66,9 +66,14 @@ Until both settings exist, `/admin` shows a "not set up yet" page and nothing el
 
 ### Writing text
 
-- Leave a blank line between paragraphs.
-- Links: `[link text](https://example.com)`.
+- Description boxes have a toolbar: **Bold** (⌘/Ctrl+B), *Italic* (⌘/Ctrl+I), Link (⌘/Ctrl+K)
+  and Remove link. Select some words first, then press a button.
+- Enter starts a new paragraph; Shift+Enter adds a line break.
+- Pasted text arrives as plain text, so styles from other apps don't come along.
 - Tags can be marked **Green**, like “Case study available on request”.
+
+Behind the scenes the text is stored in a simple format in `content.json`: `**bold**`,
+`_italic_`, `[link text](https://…)`, a blank line between paragraphs.
 
 ## Files
 

@@ -2,6 +2,7 @@
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
 import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf } from '/render.mjs';
+import { richText } from '/admin/editor.mjs';
 
 /* ---------- small helpers ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -363,7 +364,21 @@ function text(label, obj, key, opts = {}) {
   return h('label', h('span', label, count), input, opts.hint && h('small', opts.hint));
 }
 
+// Long text: a formatting editor (bold, italic, links), or a plain box for
+// text with a length limit such as search descriptions.
 function area(label, obj, key, opts = {}) {
+  if (!opts.plain && !opts.limit) {
+    const editor = richText({
+      value: obj[key] ?? '',
+      label,
+      placeholder: opts.placeholder,
+      rows: opts.rows,
+      notify: (m) => toast(m),
+      onChange: (text) => { obj[key] = text; opts.onInput?.(text); changed(); },
+    });
+    return h('div.field', h('span.field__label', label), editor,
+      h('small', opts.hint ?? 'Enter starts a new paragraph. Shift+Enter adds a line break.'));
+  }
   const ta = h('textarea', { rows: opts.rows || 6, placeholder: opts.placeholder }); ta.value = obj[key] ?? '';
   const count = opts.limit ? h('span.count') : null;
   const upd = () => { if (count) { const n = ta.value.length; count.textContent = `${n} / ${opts.limit}`; count.classList.toggle('over', n > opts.limit); } };
@@ -823,8 +838,8 @@ const panels = {
     return [
       h('p.intro', 'The text at the top of the page.'),
       text('Name', i, 'name'),
-      area('Introduction', i, 'tagline', { rows: 4, hint: 'Shown under your name. Add a link with [link text](https://…).' }),
-      area('About', i, 'bio', { rows: 10, hint: 'Shown on the right. Leave a blank line between paragraphs.' }),
+      area('Introduction', i, 'tagline', { rows: 4, hint: 'Shown under your name.' }),
+      area('About', i, 'bio', { rows: 10, hint: 'Shown on the right. Enter starts a new paragraph.' }),
     ];
   },
 
