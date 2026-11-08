@@ -95,6 +95,27 @@ label small,.hint{font-weight:400;color:var(--muted);font-size:12px}
 input[type=text],input[type=url],input[type=password],input:not([type]),select,textarea{width:100%;background:var(--field);border:1px solid var(--line-2);border-radius:8px;padding:11px 13px;font-weight:400}
 textarea{resize:vertical;min-height:90px;line-height:1.5}
 input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 22%,transparent)}
+/* Rich text editor (editor.mjs) */
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.field__label{font-weight:500}
+.field small{font-weight:400;color:var(--muted);font-size:12px}
+.rte{position:relative;border:1px solid var(--line-2);border-radius:8px;background:var(--field)}
+.rte:focus-within{border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 22%,transparent)}
+.rte__bar{display:flex;gap:2px;padding:4px;border-bottom:1px solid var(--line)}
+.rte__btn{width:30px;height:30px;border:0;border-radius:6px;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.rte__btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rte__btn:hover{background:var(--chip);color:var(--fg)}
+.rte__btn.is-on{background:var(--chip);color:var(--fg)}
+.rte__btn:disabled{opacity:.35;cursor:default;background:none}
+.rte__body{padding:11px 13px;line-height:1.6;outline:none;overflow-wrap:anywhere;cursor:text}
+.rte__body p{margin:0}
+.rte__body p+p{margin-top:.8em}
+.rte__body a{color:var(--focus);text-decoration:underline;text-underline-offset:2px}
+.rte__body b,.rte__body strong{font-weight:650}
+.rte__body.is-empty::before{content:attr(data-placeholder);color:var(--muted);opacity:.8;position:absolute;pointer-events:none}
+.rte__pop{display:flex;gap:6px;align-items:center;padding:8px;border-top:1px solid var(--line);background:var(--chip);border-radius:0 0 8px 8px}
+.rte__pop[hidden]{display:none}
+.rte__pop input{flex:1;padding:6px 10px!important}
 .count{float:right;font-weight:400;font-size:12px;color:var(--muted)}
 .count.over{color:var(--warn)}
 .row{display:flex;gap:10px;align-items:center}
