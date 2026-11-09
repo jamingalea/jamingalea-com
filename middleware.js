@@ -107,6 +107,8 @@ async function api(request, url, token) {
   const repo = process.env.CMS_REPO || 'jamingalea/jamingalea-com';
   const branch = process.env.CMS_BRANCH || 'main';
 
+  if (url.pathname === '/admin/api/analytics') return analytics(url);
+
   if (url.pathname === '/admin/api/config') {
     const [owner, name] = repo.split('/');
     return json({ owner, repo: name, branch });
@@ -135,6 +137,65 @@ async function api(request, url, token) {
     status: res.status,
     headers: { 'Content-Type': res.headers.get('content-type') || 'application/json', 'Cache-Control': 'no-store' },
   });
+}
+
+/* ---------- analytics (Vercel Web Analytics, read with ANALYTICS_TOKEN) ---------- */
+
+const PROJECT_ID = process.env.ANALYTICS_PROJECT_ID || 'prj_A2scubKMfee5RzGqYQcGDHYgPHu6';
+const TEAM_ID = process.env.ANALYTICS_TEAM_ID || 'team_9oQSoIcbm43jRphF3AC58PfI';
+
+// Rows come back as { <dimension>: value, <count fields> }. Read the counts tolerantly.
+const firstNumber = (row, keys) => { for (const k of keys) if (typeof row?.[k] === 'number') return row[k]; return 0; };
+const counts = (row) => ({
+  pageviews: firstNumber(row, ['count', 'total', 'pageViews', 'pageviews', 'views']),
+  visitors: firstNumber(row, ['visitors', 'devices', 'uniqueVisitors']),
+});
+
+async function analytics(url) {
+  const token = process.env.ANALYTICS_TOKEN;
+  if (!token) return json({ state: 'no-token' });
+  const days = Math.min(365, Math.max(1, parseInt(url.searchParams.get('days'), 10) || 30));
+  const until = new Date();
+  const since = new Date(until.getTime() - days * 864e5);
+
+  const query = async (path, params) => {
+    const qs = new URLSearchParams({ projectId: PROJECT_ID, teamId: TEAM_ID, since: since.toISOString(), until: until.toISOString(), ...params });
+    const res = await fetch(`https://api.vercel.com/v1/query/web-analytics/visits/${path}?${qs}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const code = body?.error?.code || '';
+      const err = new Error(body?.error?.message || `HTTP ${res.status}`);
+      err.state = code === 'web_analytics_not_enabled' ? 'not-enabled' : res.status === 401 || res.status === 403 ? 'bad-token' : 'error';
+      throw err;
+    }
+    return body;
+  };
+  const rows = (body, dim) => (Array.isArray(body?.data) ? body.data : []).map((r) => ({ key: r[dim] ?? r.key ?? r.value ?? '', ...counts(r) }));
+
+  try {
+    const [total, daily, countries, sources, pages] = await Promise.all([
+      query('count', {}),
+      query('aggregate', { by: 'day', limit: '100' }),
+      query('aggregate', { by: 'country', limit: '10' }),
+      query('aggregate', { by: 'referrerHostname', limit: '10' }),
+      query('aggregate', { by: 'requestPath', limit: '100' }),
+    ]);
+    return new Response(JSON.stringify({
+      state: 'ok',
+      days,
+      since: since.toISOString(),
+      until: until.toISOString(),
+      totals: counts(total?.data ?? total),
+      daily: (Array.isArray(daily?.data) ? daily.data : []).map((r) => ({ day: String(r.timestamp ?? r.day ?? r.date ?? '').slice(0, 10), ...counts(r) })),
+      countries: rows(countries, 'country'),
+      sources: rows(sources, 'referrerHostname'),
+      pages: rows(pages, 'requestPath'),
+    }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, max-age=300' } });
+  } catch (e) {
+    return json({ state: e.state || 'error', message: e.message });
+  }
 }
 
 /* ---------- responses ---------- */

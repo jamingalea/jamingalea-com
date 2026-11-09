@@ -25,7 +25,11 @@ function h(tag, attrs, ...kids) {
     if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
     else if (k === 'value') el.value = v;
     else if (k === 'checked') el.checked = !!v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'style' && typeof v === 'object') {
+      for (const [p, val] of Object.entries(v)) {
+        if (p.startsWith('--')) el.style.setProperty(p, val); else el.style[p] = val;
+      }
+    }
     else el.setAttribute(k, v === true ? '' : v);
   }
   for (const k of kids.flat(Infinity)) {
@@ -259,7 +263,7 @@ function renderPreview() {
       }
     } catch { /* ignore */ }
   };
-  const opts = { asset: assetUrl, headExtra: PREVIEW_HEAD };
+  const opts = { asset: assetUrl, headExtra: PREVIEW_HEAD, preview: true };
   const cs = state.previewPage !== 'home' && state.content.caseStudies.find((x) => x.id === state.previewPage);
   frame.srcdoc = cs ? renderCaseStudy(state.content, cs, opts) : renderSite(state.content, opts);
   updatePageSelect();
@@ -767,8 +771,178 @@ function caseStudyPanel(cs) {
   ];
 }
 
+/* ---------- analytics ---------- */
+const RANGES = [[7, '7 days'], [30, '30 days'], [90, '90 days']];
+state.analyticsDays = store.get('cms-analytics-days', 30);
+state.analyticsCache = {};
+
+const fmt = (n) => Number(n || 0).toLocaleString('en-GB');
+let regionNames = null;
+try { regionNames = new Intl.DisplayNames(['en-GB'], { type: 'region' }); } catch { /* old browser */ }
+const flag = (code) => (/^[A-Z]{2}$/.test(code) ? String.fromCodePoint(...[...code].map((c) => 0x1f1a5 + c.charCodeAt(0))) : '');
+const countryName = (code) => {
+  if (!code) return 'Unknown';
+  try { return regionNames?.of(code) || code; } catch { return code; }
+};
+
+function analyticsHelp(st, message) {
+  const steps = {
+    'not-enabled': [
+      'Analytics isn’t switched on yet',
+      'In Vercel, open your project, go to the Analytics tab and click Enable. Visits are counted from then on, so the numbers start at zero.',
+    ],
+    'no-token': [
+      'One more setting needed',
+      'Create a token at vercel.com → Account Settings → Tokens (scope: your projects, expiry: your choice). Then add it in your project → Settings → Environment Variables as ANALYTICS_TOKEN (tick Sensitive), and redeploy.',
+    ],
+    'bad-token': [
+      'Vercel didn’t accept the analytics token',
+      'The ANALYTICS_TOKEN in your Vercel settings may have expired. Create a new token and replace it, then redeploy.',
+    ],
+    error: ['Couldn’t load analytics', message || 'Something went wrong talking to Vercel. Try again in a minute.'],
+    offline: ['Analytics works on the live site', 'Open the CMS at your site’s /admin page to see your numbers.'],
+  }[st] || ['Couldn’t load analytics', message || ''];
+  return h('div.notice', h('strong', steps[0]), h('p', steps[1]));
+}
+
+function statTile(label, value, sub) {
+  return h('div.stat', h('span.stat__label', label), h('span.stat__value', value), sub && h('span.stat__sub', sub));
+}
+
+// One bar per day; hover or focus a bar for its numbers.
+function dailyChart(data) {
+  const byDay = new Map(data.daily.map((d) => [d.day, d]));
+  const days = [];
+  const start = new Date(`${data.since.slice(0, 10)}T00:00:00Z`);
+  const end = new Date(`${data.until.slice(0, 10)}T00:00:00Z`);
+  for (let t = start.getTime(); t <= end.getTime(); t += 864e5) {
+    const key = new Date(t).toISOString().slice(0, 10);
+    days.push(byDay.get(key) || { day: key, visitors: 0, pageviews: 0 });
+  }
+  const max = Math.max(1, ...days.map((d) => d.visitors));
+  const label = (key, opts) => new Date(`${key}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', ...opts });
+  const tip = h('div.chart__tip', { role: 'status' });
+  tip.hidden = true;
+  const show = (bar, d) => {
+    tip.replaceChildren(h('strong', label(d.day, { weekday: 'short', day: 'numeric', month: 'short' })),
+      h('span', `${fmt(d.visitors)} visitor${d.visitors === 1 ? '' : 's'}`), h('span', `${fmt(d.pageviews)} page view${d.pageviews === 1 ? '' : 's'}`));
+    tip.hidden = false;
+    const plot = bar.parentElement.getBoundingClientRect(), r = bar.getBoundingClientRect();
+    const x = r.left - plot.left + r.width / 2;
+    tip.style.left = `${Math.min(Math.max(x, 70), plot.width - 70)}px`;
+    tip.style.top = `${Math.max(r.top - plot.top + bar.firstChild.offsetTop - 8, 0)}px`;
+    bars.forEach((b) => b.classList.toggle('is-hover', b === bar));
+  };
+  const hide = () => { tip.hidden = true; bars.forEach((b) => b.classList.remove('is-hover')); };
+  const bars = days.map((d) => {
+    const bar = h('button.chart__bar', {
+      type: 'button',
+      'aria-label': `${label(d.day, { day: 'numeric', month: 'long' })}: ${d.visitors} visitors, ${d.pageviews} page views`,
+      style: { '--h': `${(d.visitors / max) * 100}%` },
+    }, h('span'));
+    bar.addEventListener('mouseenter', () => show(bar, d));
+    bar.addEventListener('focus', () => show(bar, d));
+    bar.addEventListener('blur', hide);
+    return bar;
+  });
+  const plot = h('div.chart__plot', bars, tip);
+  plot.addEventListener('mouseleave', hide);
+  return h('figure.chart',
+    h('div.chart__max', `${fmt(max)}`),
+    plot,
+    h('figcaption.chart__axis', h('span', label(days[0].day, { day: 'numeric', month: 'short' })), h('span', label(days[days.length - 1].day, { day: 'numeric', month: 'short' }))));
+}
+
+function rankList(items, empty) {
+  if (!items.length) return h('p.hint', empty);
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return h('ol.rank', items.map((i) => h('li',
+    h('span.rank__name', i.name),
+    h('span.rank__value', fmt(i.value)),
+    h('span.rank__bar', { style: { '--w': `${(i.value / max) * 100}%` } }))));
+}
+
+function analyticsView(data) {
+  const { totals } = data;
+  const perVisitor = totals.visitors ? (totals.pageviews / totals.visitors).toFixed(1) : '0';
+  const siteHosts = new Set([location.hostname, 'jamingalea.com', 'www.jamingalea.com']);
+  try { siteHosts.add(new URL(state.content.site.url).hostname); } catch { /* ignore */ }
+
+  const countries = data.countries.map((c) => ({ name: `${flag(c.key)} ${countryName(c.key)}`.trim(), value: c.visitors || c.pageviews }));
+  const sourceTotals = new Map();
+  for (const s of data.sources) {
+    const host = String(s.key || '').replace(/^www\./, '');
+    if (siteHosts.has(host) || siteHosts.has(`www.${host}`)) continue;
+    const name = host || 'Direct (typed or bookmarked)';
+    sourceTotals.set(name, (sourceTotals.get(name) || 0) + (s.visitors || s.pageviews));
+  }
+  const sources = [...sourceTotals].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+
+  // Case studies: live ones are always listed, even with no views yet; pages that
+  // were viewed but have since been removed or renamed show their address.
+  const c = state.published || state.content;
+  const viewsById = new Map();
+  for (const p of data.pages) {
+    const m = /^\/work\/([^/]+)/.exec(p.key || '');
+    if (m) viewsById.set(m[1], (viewsById.get(m[1]) || 0) + p.pageviews);
+  }
+  const known = new Map((c.caseStudies || []).map((cs) => [cs.id, cs]));
+  const studies = [
+    ...(c.caseStudies || []).filter((cs) => isLive(c, cs) || viewsById.has(cs.id)).map((cs) => ({
+      name: `${caseStudyTitle(c, cs)}${cs.unlisted ? ' (unlisted)' : ''}`, value: viewsById.get(cs.id) || 0,
+    })),
+    ...[...viewsById].filter(([id]) => !known.has(id)).map(([id, value]) => ({ name: `/work/${id}/`, value })),
+  ].sort((a, b) => b.value - a.value);
+  const homeViews = data.pages.filter((p) => p.key === '/' || p.key === '/index.html').reduce((n, p) => n + p.pageviews, 0);
+
+  return [
+    h('div.stats',
+      statTile('Visitors', fmt(totals.visitors), 'unique people'),
+      statTile('Page views', fmt(totals.pageviews), `${fmt(homeViews)} on the homepage`),
+      statTile('Pages per visitor', perVisitor)),
+    h('h3.group', 'Visitors per day'),
+    totals.pageviews ? dailyChart(data) : h('p.hint', 'No visits recorded in this period yet.'),
+    h('h3.group', 'Where visitors are from'),
+    rankList(countries, 'No data yet.'),
+    h('h3.group', 'How they found your site'),
+    rankList(sources, 'No data yet.'),
+    h('h3.group', 'Case studies viewed'),
+    rankList(studies, 'No case studies are published yet. Their views will appear here once they are.'),
+    h('p.hint', { style: { marginTop: '28px' } }, 'Counted by Vercel Web Analytics, without cookies. Your own visits to the CMS aren’t counted. Numbers can take a few minutes to appear.'),
+  ];
+}
+
+function analyticsPanel() {
+  const body = h('div.analytics');
+  const days = state.analyticsDays;
+  const ranges = h('div.devices.range', { role: 'group', 'aria-label': 'Period' },
+    RANGES.map(([d, label]) => h('button', {
+      type: 'button',
+      class: d === days ? 'is-on' : null,
+      onclick: () => { state.analyticsDays = d; store.set('cms-analytics-days', d); renderPanel(); },
+    }, label)));
+
+  const draw = (data) => {
+    if (data.state !== 'ok') body.replaceChildren(analyticsHelp(data.state, data.message));
+    else body.replaceChildren(...analyticsView(data).flat().filter(Boolean));
+  };
+  const cached = state.analyticsCache[days];
+  if (cached && Date.now() - cached.at < 5 * 60e3) draw(cached.data);
+  else {
+    body.replaceChildren(h('p.hint', 'Loading…'));
+    (state.conn ? api(`/analytics?days=${days}`) : Promise.resolve({ state: 'offline' }))
+      .then((data) => {
+        if (data.state === 'ok') state.analyticsCache[days] = { at: Date.now(), data };
+        if (state.tab === 'analytics' && state.analyticsDays === days) draw(data);
+      })
+      .catch((e) => { if (state.tab === 'analytics') draw({ state: 'error', message: e.message }); });
+  }
+  return [h('div.analytics__head', h('p.intro', { style: { margin: 0 } }, 'Visits to your site.'), ranges), body];
+}
+
 /* ---------- panels ---------- */
 const panels = {
+  analytics: analyticsPanel,
   projects() {
     const c = state.content;
     const list = c.projects;

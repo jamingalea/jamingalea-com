@@ -49,7 +49,12 @@ const ARROW =
 const ARROW_RIGHT =
   '<svg class="arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>';
 
-const defaultAsset = (p) => (!p ? '' : /^(https?:|data:|blob:|\/)/.test(p) ? p : '/' + p);
+// Vercel Web Analytics: cookieless page-view counting, read by the CMS's Analytics tab.
+// Left out of the CMS preview so editing doesn't count as visits.
+const ANALYTICS = `<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
+<script defer src="/_vercel/insights/script.js"></script>`;
+
+const defaultAsset =(p) => (!p ? '' : /^(https?:|data:|blob:|\/)/.test(p) ? p : '/' + p);
 
 /* ---------- case studies ---------- */
 // content.caseStudies = [{ id, title, project, enabled, unlisted, summary, heroImage, … }]
@@ -131,6 +136,7 @@ ${site.appleTouchIcon ? `<link rel="apple-touch-icon" href="${esc(asset(site.app
 <link rel="preload" href="/fonts/aqiiD4LUKkKzXdjGL5UzHq8bo5w.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script>document.documentElement.classList.add('js')</script>
+${opts.preview ? '' : ANALYTICS}
 ${opts.headExtra || ''}
 </head>`;
 }
