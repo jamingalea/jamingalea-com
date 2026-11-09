@@ -6,8 +6,21 @@ const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
 
 const isExternal = (url) => /^https?:\/\//i.test(url);
+
+// Links to side projects that show a visitor card get ?from=portfolio, so the card
+// still appears when a browser hides where the visitor came from. Set per render.
+let cardHosts = new Set();
+const tagForCard = (url) => {
+  if (!isExternal(url) || !cardHosts.size) return url;
+  try {
+    const u = new URL(url);
+    if (!cardHosts.has(normaliseHost(u.hostname))) return url;
+    u.searchParams.set('from', 'portfolio');
+    return u.toString();
+  } catch { return url; }
+};
 const linkAttrs = (url) =>
-  `href="${esc(url)}"` + (isExternal(url) ? ' target="_blank" rel="noopener"' : '');
+  `href="${esc(tagForCard(url))}"` + (isExternal(url) ? ' target="_blank" rel="noopener"' : '');
 
 // Inline formatting (what the CMS editor writes):
 //   [label](url)  link        **text**  bold        _text_ or *text*  italic
@@ -102,8 +115,55 @@ export function renderPages(c, opts = {}) {
   for (const cs of c.caseStudies) {
     if (isLive(c, cs)) pages.push({ path: `work/${cs.id}/index.html`, html: renderCaseStudy(c, cs, opts) });
   }
+  pages.push({ path: 'visitor-cards.json', html: JSON.stringify(visitorCards(c), null, 2) + '\n' });
   return pages;
 }
+
+/* ---------- visitor cards ----------
+   project.visitorCard = { enabled, heading, message, domains }
+   A card appears on the project's own site (the domain of its link, plus any extra
+   domains) when someone arrives from the portfolio. visitor-card.js reads the file
+   below; its links are relative, resolved against wherever the portfolio is hosted. */
+
+export function normaliseHost(h) {
+  return String(h || '').trim().toLowerCase()
+    .replace(/^[a-z][\w+.-]*:\/\//, '').replace(/[/?#].*$/, '').replace(/:\d+$/, '').replace(/^www\./, '');
+}
+
+/** The domains a project's visitor card appears on. */
+export function cardDomains(p) {
+  const out = new Set();
+  if (p.url && isExternal(p.url)) out.add(normaliseHost(p.url));
+  for (const d of String(p.visitorCard?.domains || '').split(/[\s,]+/)) if (normaliseHost(d)) out.add(normaliseHost(d));
+  return [...out].filter((d) => d.includes('.'));
+}
+
+const cardOn = (p) => !!(p.visitorCard?.enabled && String(p.visitorCard.message || '').trim());
+
+export function visitorCards(c) {
+  const name = c.intro?.name || '';
+  let portfolioHost = '';
+  try { portfolioHost = normaliseHost(new URL(c.site?.url).hostname); } catch { /* none */ }
+  const cards = {};
+  for (const p of c.projects || []) {
+    if (!cardOn(p)) continue;
+    const study = (c.caseStudies || []).filter((cs) => cs.project === p.id && isLive(c, cs))
+      .sort((a, b) => Number(!!a.unlisted) - Number(!!b.unlisted))[0];
+    const card = {
+      project: p.title || '',
+      heading: p.visitorCard.heading || '',
+      html: paragraphs(p.visitorCard.message),
+      caseStudy: study ? caseStudyPath(study) : '',
+      portfolio: p.hidden || !p.id ? '/' : `/#${p.id}`,
+    };
+    for (const d of cardDomains(p)) cards[d] = card;
+  }
+  return { version: 1, by: name, portfolioHosts: portfolioHost ? [portfolioHost] : [], cards };
+}
+
+const setCardHosts = (c) => {
+  cardHosts = new Set((c.projects || []).filter(cardOn).flatMap(cardDomains));
+};
 
 /* ---------- shared pieces ---------- */
 
@@ -207,6 +267,7 @@ function highlight(h, asset) {
  * @param {string} [opts.headExtra]             extra markup for <head> (used by the preview)
  */
 export function renderSite(c, opts = {}) {
+  setCardHosts(c);
   const asset = opts.asset || defaultAsset;
   const site = c.site || {};
   const visible = (c.projects || []).filter((p) => !p.hidden);
@@ -270,6 +331,7 @@ function block(b, asset) {
 export function renderCaseStudy(c, cs, opts = {}) {
   const asset = opts.asset || defaultAsset;
   c = migrate(c);
+  setCardHosts(c);
   const p = projectOf(c, cs) || {};
   const intro = c.intro || {};
   const site = c.site || {};

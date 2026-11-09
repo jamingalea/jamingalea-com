@@ -152,6 +152,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .subcard{border:1px solid var(--line);border-radius:10px;padding:16px 16px 0;margin-bottom:12px}
 .badge{font-size:11px;padding:1px 6px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:400;margin-left:6px}
 
+/* Visitor card section (inside a project) */
+.vc{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:8px 0 24px}
+.vc__title{display:block;font-weight:500;margin-bottom:12px}
+.vc__install{border-top:1px solid var(--line);padding-top:16px}
+.vc__code{flex:1;min-width:0;font-size:12px;padding:8px 10px;border-radius:6px;overflow-x:auto;white-space:nowrap;display:block}
+.hint.warn{color:var(--warn)}
+
 /* Analytics */
 .analytics__head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
 .range{flex:none}
