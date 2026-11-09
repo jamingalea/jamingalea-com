@@ -64,6 +64,20 @@ Optional settings: `CMS_REPO` (default `jamingalea/jamingalea-com`) and `CMS_BRA
 When the GitHub token expires, create a new one and replace `GITHUB_TOKEN` in Vercel.
 Until both settings exist, `/admin` shows a "not set up yet" page and nothing else.
 
+### Analytics
+
+The CMS's **Analytics** tab shows visitors, page views, countries, where visitors came
+from and which case studies were viewed, for the last 7, 30 or 90 days. The numbers come
+from Vercel Web Analytics, which counts visits without cookies. The CMS preview isn't counted.
+
+Setup (once):
+1. In Vercel, open the project → **Analytics** → **Enable**. Counting starts from then.
+2. Create a token at Vercel → **Account Settings → Tokens**.
+3. Add it in the project → **Settings → Environment Variables** as `ANALYTICS_TOKEN`
+   (tick **Sensitive**), then redeploy.
+
+How long people stay isn't measured; Vercel Web Analytics doesn't record it.
+
 ### Writing text
 
 - Description boxes have a toolbar: **Bold** (⌘/Ctrl+B), *Italic* (⌘/Ctrl+I), Link (⌘/Ctrl+K)
