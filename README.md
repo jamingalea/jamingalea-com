@@ -64,6 +64,25 @@ Optional settings: `CMS_REPO` (default `jamingalea/jamingalea-com`) and `CMS_BRA
 When the GitHub token expires, create a new one and replace `GITHUB_TOKEN` in Vercel.
 Until both settings exist, `/admin` shows a "not set up yet" page and nothing else.
 
+### Visitor cards on side projects
+
+A project can show a small animated card on its **own website**, only to people who
+arrive there from this portfolio: who made it, a short message, and links to its case
+study and back to the portfolio.
+
+1. In the CMS, open the project → **Visitor card** → switch it on and write the message.
+   It appears on the domain of the project's link (add others under **Other domains**).
+   Projects not on the homepage yet can be added and hidden (◉); their cards still work.
+2. Publish. The cards are saved to `visitor-cards.json`.
+3. Once per side project, paste the line shown in the CMS before `</body>`:
+   `<script src="https://<portfolio address>/visitor-card.js" defer></script>`
+
+The card appears when the visitor came from the portfolio (the browser's referrer) or
+through a portfolio link, which the site tags with `?from=portfolio`; the tag is removed
+from the address bar straight away. On later pages of the same visit it shrinks to a small pill. Closing
+it hides it for the rest of the visit. If the portfolio moves to a new address, update the
+`src` in that line on each side project.
+
 ### Analytics
 
 The CMS's **Analytics** tab shows visitors, page views, countries, where visitors came
@@ -99,6 +118,7 @@ Behind the scenes the text is stored in a simple format in `content.json`: `**bo
 | `index.html` | Generated. Don't edit by hand |
 | `admin/` | The CMS |
 | `middleware.js` | Password protection for `/admin`, and publishing to GitHub |
+| `visitor-card.js` | The card script side projects load; reads `visitor-cards.json` (generated) |
 | `images/`, `fonts/` | Assets |
 
 If you edit `content.json` by hand, regenerate the page with:

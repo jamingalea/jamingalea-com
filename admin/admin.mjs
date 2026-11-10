@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains } from '/render.mjs';
 import { richText } from '/admin/editor.mjs';
 
 /* ---------- small helpers ---------- */
@@ -940,6 +940,77 @@ function analyticsPanel() {
   return [h('div.analytics__head', h('p.intro', { style: { margin: 0 } }, 'Visits to your site.'), ranges), body];
 }
 
+/* ---------- visitor cards (shown on a side project's own site) ---------- */
+function previewVisitorCard(p) {
+  const frame = $('#preview');
+  const win = frame.contentWindow, doc = frame.contentDocument;
+  if (!win || !doc) return;
+  const card = {
+    project: p.title,
+    heading: p.visitorCard.heading || '',
+    html: paragraphs(p.visitorCard.message || 'Your message will appear here.'),
+    caseStudy: (state.content.caseStudies || []).some((cs) => cs.project === p.id && isLive(state.content, cs)) ? '#' : '',
+    portfolio: '#',
+  };
+  const go = () => win.JGVisitorCard.show(card, { by: state.content.intro?.name, delay: 250 });
+  if (win.JGVisitorCard) { go(); return; }
+  const s = doc.createElement('script');
+  s.src = '/visitor-card.js';
+  s.setAttribute('data-preview', '');
+  s.onload = go;
+  doc.body.appendChild(s);
+}
+
+function visitorCardSection(p) {
+  // Only create the field once the card is switched on, so opening a project changes nothing.
+  const vc = p.visitorCard || { enabled: false, heading: '', message: '', domains: '' };
+  const snippet = `<script src="${location.origin}/visitor-card.js" defer></script>`;
+  const domainsLine = () => {
+    const d = cardDomains(p);
+    return d.length
+      ? h('p.hint', { style: { margin: '0 0 20px' } }, `Appears on ${d.join(', ')} for people arriving from your portfolio.`)
+      : h('p.hint.warn', { style: { margin: '0 0 20px' } }, 'Add this project’s link above, or a domain below, so the card knows which site to appear on.');
+  };
+  const lineBox = h('div', domainsLine());
+  const refreshLine = () => lineBox.replaceChildren(domainsLine());
+
+  const box = h('input', { type: 'checkbox', checked: !!vc.enabled });
+  box.addEventListener('change', () => {
+    vc.enabled = box.checked;
+    p.visitorCard = vc;
+    changed(); renderPanel();
+  });
+  const toggle = h('label.check', { style: { marginBottom: '8px', fontWeight: 500 } }, box,
+    'Show a visitor card on this project’s own site');
+
+  if (!vc.enabled) {
+    return h('div.vc',
+      h('strong.vc__title', 'Visitor card'),
+      toggle,
+      h('p.hint', { style: { margin: 0 } }, 'A small card that animates in on this project’s website, only for people who arrive from your portfolio, explaining that you made it and why.'));
+  }
+
+  const copyBtn = h('button.btn.btn--sm', { type: 'button' }, 'Copy');
+  copyBtn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(snippet); copyBtn.textContent = 'Copied'; setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500); }
+    catch { toast('Couldn’t copy. Select the code and copy it instead.'); }
+  });
+
+  return h('div.vc',
+    h('strong.vc__title', 'Visitor card'),
+    toggle,
+    lineBox,
+    text('Heading', vc, 'heading', { placeholder: p.title, hint: 'Optional. Leave empty to use the project title.' }),
+    area('Message', vc, 'message', { rows: 5, placeholder: 'What this is, and why you made it…', hint: 'Shown on the card. Keep it short: two or three sentences.' }),
+    text('Other domains', vc, 'domains', { placeholder: 'e.g. menumenu.co.uk, app.menumenu.app', hint: 'Optional. Other addresses this project lives at, separated by commas.', onInput: refreshLine }),
+    h('div.row', { style: { marginBottom: '20px' } },
+      h('button.btn.btn--sm', { type: 'button', onclick: () => previewVisitorCard(p) }, 'Preview card')),
+    h('div.vc__install',
+      h('span.field__label', 'Install on the project’s site (once)'),
+      h('p.hint', { style: { margin: '0 0 8px' } }, 'Paste this line into the project’s HTML, just before </body>. The same line works on every project.'),
+      h('div.row', h('code.vc__code', snippet), copyBtn)));
+}
+
 /* ---------- panels ---------- */
 const panels = {
   analytics: analyticsPanel,
@@ -969,6 +1040,7 @@ const panels = {
             tagsField(p.tags),
             select('Column', p, 'column', [['left', 'Left — large landscape image'], ['right', 'Right — square image']], renderPanel),
             caseStudyEntry(p),
+            visitorCardSection(p),
           ],
         }))),
         h('button.btn.add', { type: 'button', onclick: () => {
