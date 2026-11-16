@@ -2,7 +2,7 @@
 (function () {
   var S = window.SiteStyles = window.SiteStyles || {}; S.q = S.q || [];
   S.q.push({
-    id: 'swiss', label: 'Swiss', css: '/styles/swiss.css', bg: '#f2f2f2', enter: 'grid', accent: '#e8420c',
+    id: 'swiss', label: 'Swiss', css: '/styles/swiss.css', bg: '#f2f2f2', enter: 'skeleton', accent: '#e8420c',
     fonts: ['400 16px "JG Sans"', '600 16px "JG Sans"'],
     render: function (m, H) {
       var h = H.h, root = h('div', { class: 'sw' });

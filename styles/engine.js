@@ -13,7 +13,7 @@
  *           ?style=off                    the plain server-rendered page, no engine
  *           ?linger=10                    switch after 10 s instead of 60
  *           ?linger=off                   never switch by itself
- *           ?fx=glitch | typing | grid | fade   use one entrance for every switch (default: each style's own)
+ *           ?fx=glitch | typing | grid | skeleton | fade   use one entrance for every switch (default: each style's own)
  */
 (function () {
   'use strict';
@@ -334,6 +334,69 @@
         });
       }); });
       setTimeout(finish, (n - 1) * delay + dur + 60);
+    }
+  };
+
+  // Swiss: the new layout is drawn first as a wireframe (bars for each line of text, crossed
+  // boxes for images, hairlines for rules), then the real content swipes in from the left
+  effects.skeleton = {
+    run: function (c, finish) {
+      var vw = c.vw, vh = c.vh, sr = c.newHost.shadowRoot, boxes = [];
+      var sk = h('div'); sk.setAttribute('aria-hidden', 'true');
+      sk.style.cssText = 'position:fixed;left:0;top:0;width:' + vw + 'px;height:' + vh +
+        'px;overflow:hidden;z-index:2147482999;pointer-events:none;clip-path:inset(0 0 0 0);background:' + c.newBg;
+      var line = '#d0d0d0', X = function (dir) { return 'linear-gradient(to ' + dir + ',transparent calc(50% - .6px),' + line + ' 50%,transparent calc(50% + .6px))'; };
+      function box(r, kind) {
+        if (r.bottom < 0 || r.top > vh || r.width < 2 || r.height < 1) return;
+        var b = h('div'), top = r.top, ht = r.height, bg = '';
+        if (kind === 'text') { ht = Math.max(5, Math.round(r.height * 0.5)); top = r.top + (r.height - ht) / 2; bg = 'background:#dcdcdc'; }
+        else if (kind === 'img') bg = 'background:#e7e7e7;box-shadow:inset 0 0 0 1px ' + line + ';background-image:' + X('top right') + ',' + X('bottom right');
+        else { ht = 1; bg = 'background:' + line; }
+        b.style.cssText = 'position:absolute;left:' + r.left + 'px;top:' + top + 'px;width:' + r.width + 'px;height:' + ht +
+          'px;transform:scaleX(0);transform-origin:left center;' + bg;
+        b._t = r.top;
+        sk.appendChild(b); boxes.push(b);
+      }
+      // nothing for content hidden under a sticky header
+      var bar = sr.querySelector('[data-chrome]'), hb = bar ? bar.getBoundingClientRect().bottom : 0;
+      var under = function (e, r) { return !(bar && bar.contains(e)) && r.top < hb; };
+      sr.querySelectorAll('img').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box(r, 'img'); });
+      sr.querySelectorAll('h1,h2,h3,p,.brand,.num').forEach(function (e) {
+        var rg = document.createRange(); rg.selectNodeContents(e);
+        Array.prototype.forEach.call(rg.getClientRects(), function (r) { if (!under(e, r)) box(r, 'text'); });
+      });
+      sr.querySelectorAll('.tags li,.links li,.style-switch button').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box(r, 'text'); });
+      sr.querySelectorAll('[data-rule],.rule').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box({ left: r.left, width: r.width, top: r.top, bottom: r.top + 1, height: 1 }, 'line'); });
+      sr.querySelectorAll('.top').forEach(function (e) { var r = e.getBoundingClientRect(); box({ left: 0, width: vw, top: r.bottom - 1, bottom: r.bottom, height: 1 }, 'line'); });
+      document.body.appendChild(sk);
+
+      var edge = h('div');
+      edge.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:' + vh + 'px;z-index:2147483001;pointer-events:none;opacity:0;background:' + c.accent;
+      document.body.appendChild(edge);
+
+      // 1. the old page fades out while the wireframe draws itself, top to bottom
+      c.overlay.style.transition = 'opacity 220ms ease';
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        c.overlay.style.opacity = '0';
+        boxes.forEach(function (b) {
+          b.style.transition = 'transform 320ms cubic-bezier(.2,.7,.2,1) ' + Math.round(80 + Math.max(0, b._t) / vh * 300) + 'ms';
+          b.style.transform = 'scaleX(1)';
+        });
+      }); });
+      // 2. the real page swipes in over it
+      var swipe = 560, start = 860;
+      setTimeout(function () {
+        var t0 = performance.now();
+        edge.style.opacity = '1';
+        (function frame(now) {
+          var t = Math.min(1, (now - t0) / swipe);
+          var e = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;   // ease in-out
+          var x = Math.round(e * vw);
+          sk.style.clipPath = 'inset(0 0 0 ' + x + 'px)';
+          edge.style.transform = 'translateX(' + (x - 1) + 'px)';
+          if (t < 1) requestAnimationFrame(frame); else { sk.remove(); edge.remove(); finish(); }
+        })(t0);
+      }, start);
     }
   };
 
