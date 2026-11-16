@@ -10,6 +10,7 @@
  * see styles/md.js and styles/swiss.js, and the README ("Page styles").
  *
  * Testing:  ?style=md | swiss | classic   show one style, no auto switching
+ *           ?style=off                    the plain server-rendered page, no engine
  *           ?linger=10                    switch after 10 s instead of 60
  *           ?linger=off                   never switch by itself
  */
@@ -33,7 +34,7 @@
     CSSStyleSheet.prototype.replaceSync && 'adoptedStyleSheets' in Document.prototype);
   var params = new URLSearchParams(location.search);
   var forced = params.get('style');
-  if (!supported || forced === 'classic') { reveal(); return; }
+  if (!supported || forced === 'off') { reveal(); return; }
 
   var model = null;
   try { model = JSON.parse(document.getElementById('site-model').textContent); } catch (e) { /* no model */ }
@@ -139,7 +140,8 @@
 
   function build(id) {
     var t = themes[id];
-    return Promise.all([loadSheet(t.css), fontsReady(t)]).then(function (r) {
+    var pre = t.preload ? Promise.race([t.preload(model).catch(function () {}), new Promise(function (r) { setTimeout(r, 2500); })]) : null;
+    return Promise.all([loadSheet(t.css), fontsReady(t), pre]).then(function (r) {
       var host = h('div', { class: 'site-stage', 'data-theme': id });
       var sr = host.attachShadow({ mode: 'open' });
       sr.adoptedStyleSheets = [r[0]];
@@ -210,7 +212,7 @@
     if (snap.mode === 'bottom') y = max;
     else if (snap.mode === 'ratio') y = snap.f * max;
     else if (snap.mode === 'anchor') {
-      var el = host.shadowRoot.querySelector('[data-anchor="' + snap.id + '"]');
+      var el = host.shadowRoot.querySelector('[data-anchor="' + snap.id + '"],[data-anchor-passive="' + snap.id + '"]');
       if (el) {
         var r = el.getBoundingClientRect();
         y = r.top + window.scrollY + snap.f * r.height - vh * CONFIG.readLine;
@@ -220,7 +222,7 @@
   }
 
   function scrollToAnchor(id, smooth) {
-    var el = currentHost && currentHost.shadowRoot.querySelector('[data-anchor="' + id + '"]');
+    var el = currentHost && currentHost.shadowRoot.querySelector('[data-anchor="' + id + '"],[data-anchor-passive="' + id + '"]');
     if (!el) return false;
     var top = el.getBoundingClientRect().top + window.scrollY;
     window.scrollTo({ left: 0, top: Math.max(0, top - 16), behavior: smooth && !reduceMotion() ? 'smooth' : 'instant' });
@@ -240,6 +242,7 @@
     Array.prototype.forEach.call(host.shadowRoot.childNodes, function (n) { frag.appendChild(n.cloneNode(true)); });
     // sticky/fixed bars don't survive being sliced into bands; they reappear when it ends
     frag.querySelectorAll('[data-chrome]').forEach(function (n) { n.remove(); });
+    frag.querySelectorAll('[data-flat]').forEach(function (n) { n.style.position = 'relative'; });
     sr.appendChild(frag);
     return c;
   }

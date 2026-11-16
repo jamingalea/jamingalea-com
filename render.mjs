@@ -303,11 +303,12 @@ export function siteModel(c, asset = defaultAsset) {
 }
 
 // Hides the plain page for a moment while the style engine draws it, so nothing flashes.
-// A timer shows the plain page anyway if the engine doesn't start. ?style=classic skips it.
+// A timer shows the plain page anyway if the engine doesn't start. ?style=off skips it.
 const STYLE_HEAD = `<style>html.style-pending body{visibility:hidden}</style>
-<script>(function(){var d=document.documentElement;if(/[?&]style=classic(&|$)/.test(location.search))return;d.classList.add('style-pending');setTimeout(function(){d.classList.remove('style-pending')},2500)})()</script>`;
+<script>(function(){var d=document.documentElement;if(/[?&]style=off(&|$)/.test(location.search))return;d.classList.add('style-pending');setTimeout(function(){d.classList.remove('style-pending')},2500)})()</script>`;
 
 const styleScripts = (model) => `<script type="application/json" id="site-model">${JSON.stringify(model).replace(/</g, '\\u003c')}</script>
+<script src="/styles/classic.js" defer></script>
 <script src="/styles/md.js" defer></script>
 <script src="/styles/swiss.js" defer></script>
 <script src="/styles/engine.js" defer></script>

@@ -130,11 +130,11 @@ node build.mjs
 
 ## Page styles
 
-Each visit draws the homepage in one of several styles (currently `md`, a README file, and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
+Each visit draws the homepage in one of several styles (currently `classic`, the original look, `md`, a README file with ASCII images, and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
 
-Styles are code only, not in the CMS. They read the same content, so CMS edits show up in every style. The CMS preview and case study pages use the plain layout. `?style=classic` shows the plain layout on the live site too.
+Styles are code only, not in the CMS. They read the same content, so CMS edits show up in every style. The CMS preview and case study pages use the plain layout. `?style=off` shows the plain server-rendered page with no style engine at all.
 
-**Try it:** `?style=md`, `?style=swiss` (one style, no switching), `?linger=10` (switch after 10 s), `?linger=off` (never switch by itself).
+**Try it:** `?style=classic`, `?style=md`, `?style=swiss` (one style, no switching), `?linger=10` (switch after 10 s), `?linger=off` (never switch by itself).
 
 **Settings** are at the top of `styles/engine.js` (`CONFIG`): `lingerSeconds`, `repeat` (false = switch once per visit), `glitchMs`.
 
@@ -145,3 +145,5 @@ Styles are code only, not in the CMS. They read the same content, so CMS edits s
 4. New fonts go in `styles/fonts/` and `styles/fonts.css` (`@font-face` doesn't work inside a style's own CSS).
 
 Reduced-motion visitors get a short crossfade instead of the glitch.
+
+Optional style hooks: `preload(model)` returns a promise the engine waits for (up to 2.5 s) before showing the style (`md` uses it to turn images into ASCII); `mount(host)` / `unmount(host)` run when the style appears or goes (`classic` uses them for its scroll effects); an element with `data-flat` is laid out flat during the glitch, and `data-anchor-passive` marks a block the visitor can be returned to but that never counts as "where they are" (for sticky areas). To keep a style out of the random rotation but still in the toggle, set `rotate: false`.
