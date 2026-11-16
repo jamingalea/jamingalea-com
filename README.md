@@ -130,7 +130,7 @@ node build.mjs
 
 ## Page styles
 
-Each visit draws the homepage in one of several styles (currently `classic`, the original look, `md`, a README file with ASCII images, and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
+Each visit draws the homepage in one of several styles (currently `classic`, the original look, `md`, a README file with green halftone images (`?img=ascii` shows them as ASCII instead), and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
 
 Styles are code only, not in the CMS. They read the same content, so CMS edits show up in every style. The CMS preview and case study pages use the plain layout. `?style=off` shows the plain server-rendered page with no style engine at all.
 

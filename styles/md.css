@@ -21,6 +21,7 @@ strong{color:#e6edf3}em{color:#d2a8ff}
 .project{margin-bottom:56px}
 figure{margin:0 0 16px;container-type:inline-size;box-shadow:0 0 0 1px #30363d;border-radius:2px;background:#0a0d12}
 .ascii{margin:0;font:400 calc(100cqw / var(--w,60))/1 "JG Mono",ui-monospace,Menlo,monospace;color:#56d364;white-space:pre;overflow:hidden;user-select:none;letter-spacing:0}
+figure img.halftone{display:block;width:100%;aspect-ratio:1896/1456}
 figure img.plain{display:block;width:100%;aspect-ratio:1896/1456;object-fit:cover;filter:grayscale(1) contrast(1.1);opacity:.85}
 figcaption{margin-top:10px;font-size:12px;color:#6e7681}
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin:0}
