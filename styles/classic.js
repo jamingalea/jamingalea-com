@@ -6,7 +6,7 @@
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
 
   S.q.push({
-    id: 'classic', label: 'Classic', css: '/styles/classic.css', bg: '#1a1a1a',
+    id: 'classic', label: 'Classic', css: '/styles/classic.css', bg: '#1a1a1a', enter: 'fade', accent: '#ffffff',
     fonts: ['300 18px Inter', '500 18px Inter'],
     render: function (m, H) {
       var h = H.h, root = h('div', { class: 'classic' });

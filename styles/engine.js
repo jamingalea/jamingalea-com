@@ -13,6 +13,7 @@
  *           ?style=off                    the plain server-rendered page, no engine
  *           ?linger=10                    switch after 10 s instead of 60
  *           ?linger=off                   never switch by itself
+ *           ?fx=glitch | typing | grid | fade   use one entrance for every switch (default: each style's own)
  */
 (function () {
   'use strict';
@@ -280,6 +281,71 @@
     window[m]('keydown', stopKey);
   }
 
+  /* ---------- entrances ----------
+   * Each style says how it arrives with `enter: '<name>'`. Unknown or missing = the glitch.
+   * An entrance has setup(ctx), which runs while the old page is still in the overlay, and
+   * run(ctx, finish), which runs once the new page is in place underneath. Try one on any
+   * style with ?fx=<name>. */
+  var effects = {};
+
+  // README: the new page "prints" line by line from the top, a block cursor at the edge
+  effects.typing = {
+    run: function (c, finish) {
+      var row = 26, steps = Math.ceil(c.vh / row), T = Math.min(1000, steps * 30), t0 = performance.now();
+      var caret = h('div'); caret.setAttribute('aria-hidden', 'true');
+      caret.style.cssText = 'position:fixed;z-index:2147483001;pointer-events:none;width:10px;height:19px;background:' + c.accent +
+        ';left:' + Math.max(16, Math.round((c.vw - 712) / 2)) + 'px;top:0';
+      document.body.appendChild(caret);
+      (function frame(now) {
+        var p = Math.min(1, (now - t0) / T), y = Math.floor(p * steps) * row;
+        c.overlay.style.clipPath = 'inset(' + y + 'px 0 0 0)';
+        caret.style.top = (y + 3) + 'px';
+        caret.style.opacity = Math.floor((now - t0) / 110) % 2 ? '0.35' : '1';
+        if (p < 1) requestAnimationFrame(frame); else { caret.remove(); finish(); }
+      })(t0);
+    }
+  };
+
+  // Swiss: the old page leaves as twelve columns, one after another, each trailing a thin rule
+  effects.grid = {
+    setup: function (c) {
+      c.band.el.remove();
+      c.cols = [];
+      var n = 12, w = c.vw / n;
+      for (var i = 0; i < n; i++) {
+        var col = h('div');
+        col.style.cssText = 'position:absolute;top:0;height:' + c.vh + 'px;left:' + (i * w) + 'px;width:' + (w + 1) +
+          'px;overflow:hidden;box-shadow:0 2px 0 ' + c.accent;
+        var inner = h('div');
+        inner.style.cssText = 'position:absolute;left:' + (-i * w) + 'px;top:0;width:' + c.vw + 'px;transform:translateY(' + (-c.sy) + 'px)';
+        inner.appendChild(cloneHost(c.oldHost));
+        col.appendChild(inner);
+        c.overlay.appendChild(col);
+        c.cols.push(col);
+      }
+      c.overlay.style.background = 'transparent';
+    },
+    run: function (c, finish) {
+      var n = c.cols.length, delay = 38, dur = 520;
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        c.cols.forEach(function (col, i) {
+          col.style.transition = 'transform ' + dur + 'ms cubic-bezier(.76,0,.24,1) ' + (i * delay) + 'ms';
+          col.style.transform = 'translateY(-' + (c.vh + 8) + 'px)';
+        });
+      }); });
+      setTimeout(finish, (n - 1) * delay + dur + 60);
+    }
+  };
+
+  // Classic: a slow, plain dissolve
+  effects.fade = {
+    run: function (c, finish) {
+      c.overlay.style.transition = 'opacity 650ms ease';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { c.overlay.style.opacity = '0'; }); });
+      setTimeout(finish, 700);
+    }
+  };
+
   function transition(oldHost, newHost, oldId, newId, snap, done) {
     var calm = reduceMotion();
     var vw = root.clientWidth, vh = window.innerHeight, sy = window.scrollY;
@@ -290,7 +356,9 @@
     overlay.style.cssText = 'position:fixed;left:0;top:0;width:' + vw + 'px;height:' + vh +
       'px;overflow:hidden;z-index:2147483000;pointer-events:none;background:' + oldBg;
 
-    var bands = calm ? [{ top: 0, h: vh, ts: 0, amp: 0 }] : makeBands(vh, vw);
+    var fxName = params.get('fx') || themes[newId].enter || 'glitch';
+    var custom = !calm && fxName !== 'glitch' ? effects[fxName] : null;
+    var bands = (calm || custom) ? [{ top: 0, h: vh, ts: 0, amp: 0 }] : makeBands(vh, vw);
     bands.forEach(function (b) {
       b.el = h('div');
       b.el.style.cssText = 'position:absolute;left:0;width:' + vw + 'px;top:' + b.top + 'px;height:' + b.h + 'px;overflow:hidden';
@@ -298,6 +366,9 @@
       b.el.appendChild(b.old);
       overlay.appendChild(b.el);
     });
+    var ctx = { overlay: overlay, band: bands[0], vw: vw, vh: vh, sy: sy, oldHost: oldHost, newHost: newHost,
+      oldBg: oldBg, newBg: newBg, accent: themes[newId].accent || '#fff' };
+    if (custom && custom.setup) custom.setup(ctx);
     document.body.appendChild(overlay);   // the old look now sits on top of everything
     lock(true);
 
@@ -309,6 +380,8 @@
     var finish = function () {
       overlay.remove(); lock(false); done();
     };
+
+    if (custom) { custom.run(ctx, finish); return; }
 
     if (calm) {                            // reduced motion: a plain crossfade
       overlay.style.transition = 'opacity 320ms ease';
@@ -428,6 +501,7 @@
   S.next = next;
   S.styles = function () { return rotation(); };
   S.config = CONFIG;
+  S.effects = effects;
   S.busy = function () { return busy; };
 
   start();

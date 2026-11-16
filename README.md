@@ -136,6 +136,8 @@ Styles are code only, not in the CMS. They read the same content, so CMS edits s
 
 **Try it:** `?style=classic`, `?style=md`, `?style=swiss` (one style, no switching), `?linger=10` (switch after 10 s), `?linger=off` (never switch by itself).
 
+**Entrances:** each style chooses how it arrives with `enter: '<name>'` in its `.js` file: `typing` (README.md), `grid` (Swiss), `fade` (Classic), or `glitch` (the default when a style doesn't say). `?fx=glitch` (or any name) forces one entrance for every switch, to compare them. New ones are small functions in `styles/engine.js` (`effects`), with a `run(ctx, finish)` and an optional `setup(ctx)`.
+
 **Settings** are at the top of `styles/engine.js` (`CONFIG`): `lingerSeconds`, `repeat` (false = switch once per visit), `glitchMs`.
 
 **Add a style:**
