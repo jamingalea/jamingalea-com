@@ -288,20 +288,74 @@
    * style with ?fx=<name>. */
   var effects = {};
 
-  // README: the new page "prints" line by line from the top, a block cursor at the edge
+  // README: the screen fills with the new background line by line, and the text follows,
+  // typed out at speed with a block cursor. Images and boxes appear as the typing reaches them.
   effects.typing = {
     run: function (c, finish) {
-      var row = 26, steps = Math.ceil(c.vh / row), T = Math.min(1000, steps * 30), t0 = performance.now();
+      var vh = c.vh, sr = c.newHost.shadowRoot, items = [], total = 0;
+      var onScreen = function (el) { var r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < vh && r.height > 0; };
+
+      // everything visible, in reading order: text nodes get typed, boxes and images pop in
+      var walker = document.createTreeWalker(sr, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+      for (var n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (n.nodeType === 3) {
+          var p = n.parentElement;
+          if (!p || !n.data.trim() || !onScreen(p) || p.closest('figure')) continue;
+          var full = n.data, shown = document.createTextNode(''), rest = document.createElement('span'), wrap = document.createElement('span');
+          rest.style.color = 'transparent';
+          rest.textContent = full;
+          wrap.appendChild(shown); wrap.appendChild(rest);
+          items.push({ kind: 'text', node: n, wrap: wrap, shown: shown, rest: rest, full: full, at: total });
+          total += full.length;
+        } else if (n.matches('figure, img:not(figure img), .tag, hr') && onScreen(n)) {
+          items.push({ kind: 'box', el: n, at: total });
+          total += 40;   // a pause the length of a short line
+        }
+      }
+      items.forEach(function (it) {
+        if (it.kind === 'text') it.node.replaceWith(it.wrap);
+        else it.el.style.visibility = 'hidden';
+      });
+
       var caret = h('div'); caret.setAttribute('aria-hidden', 'true');
-      caret.style.cssText = 'position:fixed;z-index:2147483001;pointer-events:none;width:10px;height:19px;background:' + c.accent +
-        ';left:' + Math.max(16, Math.round((c.vw - 712) / 2)) + 'px;top:0';
+      caret.style.cssText = 'position:fixed;z-index:2147483001;pointer-events:none;width:9px;height:18px;left:-20px;top:0;background:' + c.accent;
       document.body.appendChild(caret);
+
+      var row = 26, steps = Math.ceil(vh / row), fillT = 420, typeT = Math.min(1100, 300 + total * 0.5), lag = 140;
+      var t0 = performance.now(), done = 0, range = document.createRange();
+      var cleanUp = function () {
+        items.forEach(function (it) {
+          if (it.kind === 'text') it.wrap.replaceWith(it.node);
+          else it.el.style.visibility = '';
+        });
+        caret.remove(); finish();
+      };
+
       (function frame(now) {
-        var p = Math.min(1, (now - t0) / T), y = Math.floor(p * steps) * row;
-        c.overlay.style.clipPath = 'inset(' + y + 'px 0 0 0)';
-        caret.style.top = (y + 3) + 'px';
-        caret.style.opacity = Math.floor((now - t0) / 110) % 2 ? '0.35' : '1';
-        if (p < 1) requestAnimationFrame(frame); else { caret.remove(); finish(); }
+        var el = now - t0;
+        // the fill: the old page is cut away one line at a time from the top
+        var f = Math.min(1, el / fillT);
+        c.overlay.style.clipPath = 'inset(' + Math.floor(f * steps) * row + 'px 0 0 0)';
+        // the typing
+        var k = Math.max(0, Math.min(1, (el - lag) / typeT)), upto = Math.round(k * total), last = null;
+        for (var i = done; i < items.length; i++) {
+          var it = items[i];
+          if (it.at > upto) break;
+          if (it.kind === 'text') {
+            var m = Math.min(it.full.length, upto - it.at);
+            if (it.shown.data.length !== m) { it.shown.data = it.full.slice(0, m); it.rest.textContent = it.full.slice(m); }
+            last = it;
+            if (m === it.full.length && i === done) done++;
+          } else { it.el.style.visibility = ''; if (i === done) done++; }
+        }
+        if (last) {
+          range.setStart(last.shown, last.shown.data.length); range.collapse(true);
+          var r = range.getClientRects()[0] || last.wrap.getBoundingClientRect();
+          caret.style.left = Math.round(r.right + 1) + 'px';
+          caret.style.top = Math.round(r.top + (r.height - 18) / 2) + 'px';
+        }
+        caret.style.opacity = k >= 1 ? (Math.floor(el / 120) % 2 ? '0' : '1') : '1';
+        if (el < Math.max(fillT, lag + typeT) + 240) requestAnimationFrame(frame); else cleanUp();
       })(t0);
     }
   };
@@ -338,16 +392,18 @@
   };
 
   // Swiss: the new layout is drawn first as a wireframe (bars for each line of text, crossed
-  // boxes for images, hairlines for rules), then the real content swipes in from the left
+  // boxes for images, hairlines for rules), then each box fills with its own content, top to bottom
   effects.skeleton = {
     run: function (c, finish) {
-      var vw = c.vw, vh = c.vh, sr = c.newHost.shadowRoot, boxes = [];
+      var vw = c.vw, vh = c.vh, sr = c.newHost.shadowRoot, boxes = [], blocks = [];
       var sk = h('div'); sk.setAttribute('aria-hidden', 'true');
-      sk.style.cssText = 'position:fixed;left:0;top:0;width:' + vw + 'px;height:' + vh +
-        'px;overflow:hidden;z-index:2147482999;pointer-events:none;clip-path:inset(0 0 0 0);background:' + c.newBg;
+      sk.style.cssText = 'position:fixed;left:0;top:0;width:' + vw + 'px;height:' + vh + 'px;overflow:hidden;z-index:2147482999;pointer-events:none';
       var line = '#d0d0d0', X = function (dir) { return 'linear-gradient(to ' + dir + ',transparent calc(50% - .6px),' + line + ' 50%,transparent calc(50% + .6px))'; };
-      function box(r, kind) {
-        if (r.bottom < 0 || r.top > vh || r.width < 2 || r.height < 1) return;
+      var bar = sr.querySelector('[data-chrome]'), hb = bar ? bar.getBoundingClientRect().bottom : 0;
+      var under = function (e, r) { return !(bar && bar.contains(e)) && r.top < hb; };
+      var seen = function (r) { return r.bottom > 0 && r.top < vh && r.width > 1 && r.height > 0; };
+
+      function box(r, kind, block) {
         var b = h('div'), top = r.top, ht = r.height, bg = '';
         if (kind === 'text') { ht = Math.max(5, Math.round(r.height * 0.5)); top = r.top + (r.height - ht) / 2; bg = 'background:#dcdcdc'; }
         else if (kind === 'img') bg = 'background:#e7e7e7;box-shadow:inset 0 0 0 1px ' + line + ';background-image:' + X('top right') + ',' + X('bottom right');
@@ -355,24 +411,26 @@
         b.style.cssText = 'position:absolute;left:' + r.left + 'px;top:' + top + 'px;width:' + r.width + 'px;height:' + ht +
           'px;transform:scaleX(0);transform-origin:left center;' + bg;
         b._t = r.top;
-        sk.appendChild(b); boxes.push(b);
+        sk.appendChild(b); boxes.push(b); block.boxes.push(b);
       }
-      // nothing for content hidden under a sticky header
-      var bar = sr.querySelector('[data-chrome]'), hb = bar ? bar.getBoundingClientRect().bottom : 0;
-      var under = function (e, r) { return !(bar && bar.contains(e)) && r.top < hb; };
-      sr.querySelectorAll('img').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box(r, 'img'); });
-      sr.querySelectorAll('h1,h2,h3,p,.brand,.num').forEach(function (e) {
-        var rg = document.createRange(); rg.selectNodeContents(e);
-        Array.prototype.forEach.call(rg.getClientRects(), function (r) { if (!under(e, r)) box(r, 'text'); });
+      // a block is one real element plus the wireframe pieces that stand in for it
+      function block(e, kind, rects) {
+        rects = rects.filter(function (r) { return seen(r) && !under(e, r); });
+        if (!rects.length) return;
+        var bl = { el: e, top: rects[0].top, boxes: [] };
+        rects.forEach(function (r) { box(r, kind, bl); });
+        e.style.opacity = '0';
+        blocks.push(bl);
+      }
+      var lines = function (e) { var rg = document.createRange(); rg.selectNodeContents(e); return Array.prototype.slice.call(rg.getClientRects()); };
+      sr.querySelectorAll('img').forEach(function (e) { block(e, 'img', [e.getBoundingClientRect()]); });
+      sr.querySelectorAll('h1,h2,h3,p,.brand,.num,.motto').forEach(function (e) { block(e, 'text', lines(e)); });
+      sr.querySelectorAll('.tags li,.links li,.style-switch button').forEach(function (e) { block(e, 'text', [e.getBoundingClientRect()]); });
+      sr.querySelectorAll('.rule').forEach(function (e) {
+        var r = e.getBoundingClientRect();
+        if (seen(r) && !under(e, r)) { var bl = { el: null, top: r.top, boxes: [] }; box({ left: r.left, width: r.width, top: r.top, height: 1 }, 'line', bl); blocks.push(bl); }
       });
-      sr.querySelectorAll('.tags li,.links li,.style-switch button').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box(r, 'text'); });
-      sr.querySelectorAll('[data-rule],.rule').forEach(function (e) { var r = e.getBoundingClientRect(); if (!under(e, r)) box({ left: r.left, width: r.width, top: r.top, bottom: r.top + 1, height: 1 }, 'line'); });
-      sr.querySelectorAll('.top').forEach(function (e) { var r = e.getBoundingClientRect(); box({ left: 0, width: vw, top: r.bottom - 1, bottom: r.bottom, height: 1 }, 'line'); });
       document.body.appendChild(sk);
-
-      var edge = h('div');
-      edge.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:' + vh + 'px;z-index:2147483001;pointer-events:none;opacity:0;background:' + c.accent;
-      document.body.appendChild(edge);
 
       // 1. the old page fades out while the wireframe draws itself, top to bottom
       c.overlay.style.transition = 'opacity 220ms ease';
@@ -383,20 +441,20 @@
           b.style.transform = 'scaleX(1)';
         });
       }); });
-      // 2. the real page swipes in over it
-      var swipe = 560, start = 860;
+
+      // 2. each block fills with its content, top to bottom
+      var start = 760, spread = 380, fade = 280;
       setTimeout(function () {
-        var t0 = performance.now();
-        edge.style.opacity = '1';
-        (function frame(now) {
-          var t = Math.min(1, (now - t0) / swipe);
-          var e = t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;   // ease in-out
-          var x = Math.round(e * vw);
-          sk.style.clipPath = 'inset(0 0 0 ' + x + 'px)';
-          edge.style.transform = 'translateX(' + (x - 1) + 'px)';
-          if (t < 1) requestAnimationFrame(frame); else { sk.remove(); edge.remove(); finish(); }
-        })(t0);
+        blocks.forEach(function (bl) {
+          var d = Math.round(Math.max(0, bl.top) / vh * spread) + 'ms';
+          bl.boxes.forEach(function (b) { b.style.transition = 'opacity ' + fade + 'ms ease ' + d; b.style.opacity = '0'; });
+          if (bl.el) { bl.el.style.transition = 'opacity ' + fade + 'ms ease ' + d; bl.el.style.opacity = '1'; }
+        });
       }, start);
+      setTimeout(function () {
+        blocks.forEach(function (bl) { if (bl.el) { bl.el.style.transition = ''; bl.el.style.opacity = ''; } });
+        sk.remove(); finish();
+      }, start + spread + fade + 60);
     }
   };
 
