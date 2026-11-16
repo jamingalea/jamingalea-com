@@ -86,7 +86,7 @@
           var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
           var c = cv.getContext('2d');
           c.fillStyle = '#0a0d12'; c.fillRect(0, 0, W, H);
-          c.fillStyle = '#3fb950';
+          c.fillStyle = '#8b949e';
           dots.forEach(function (d) {
             var v = Math.min(1, Math.max(0, (d[2] - lo) / rng)), r = cell * 0.64 * Math.sqrt(Math.pow(v, 1.7));
             if (r < 0.45) return;
