@@ -1,36 +1,37 @@
+/* README.md: one font (JetBrains Mono), one size, one text colour. */
 :host{display:block}
-.md{min-height:100vh;background:#0d1117;color:#c9d1d9;font:400 15px/1.7 "JG Mono",ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}
-.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:16px;padding:10px 16px;background:#161b22;border-bottom:1px solid #30363d;font-size:12px}
-.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:#30363d}
-.file{color:#8b949e;margin-right:auto}
+.md{--fg:#c9d1d9;--line:#30363d;min-height:100vh;background:#0d1117;color:var(--fg);font:400 15px/1.7 "JG Mono",ui-monospace,Menlo,Consolas,monospace;-webkit-font-smoothing:antialiased}
+.md *{font:inherit;color:inherit}
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:16px;padding:10px 16px;background:#161b22;border-bottom:1px solid var(--line)}
+.dots{display:flex;gap:6px}.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.file{margin-right:auto}
 .style-switch{display:inline-flex;gap:4px}
-.style-switch button{font:inherit;color:#8b949e;background:none;border:1px solid #30363d;border-radius:4px;padding:3px 9px;cursor:pointer}
-.style-switch button:hover{color:#c9d1d9;border-color:#8b949e}
-.style-switch button[aria-pressed=true]{color:#0d1117;background:#7ee787;border-color:#7ee787}
+.style-switch button{background:none;border:1px solid var(--line);border-radius:4px;padding:2px 9px;cursor:pointer}
+.style-switch button:hover{border-color:var(--fg)}
+.style-switch button[aria-pressed=true]{border-color:var(--fg);text-decoration:underline;text-underline-offset:3px}
 .doc{max-width:760px;margin:0 auto;padding:56px 24px 96px}
-.mark{color:#6e7681;font-weight:400;user-select:none}
-h1,h2,h3{font-weight:700;line-height:1.25;margin:0}
-h1{font-size:clamp(26px,5vw,38px);color:#7ee787;margin-bottom:20px}
-h2{font-size:20px;color:#79c0ff;margin:56px 0 24px}
-h3{font-size:17px;color:#ffa657;margin:0 0 14px}
+.mark{user-select:none}
+h1,h2,h3{margin:0}
+h1{margin-bottom:24px}
+h2{margin:56px 0 24px}
+h3{margin:0 0 14px}
 p{margin:0 0 16px}
-blockquote{margin:0 0 16px;padding-left:16px;border-left:3px solid #30363d;color:#a5b0bd}
+blockquote{margin:0 0 16px;padding-left:16px;border-left:1px solid var(--line)}
 blockquote .mark{margin-left:-16px;margin-right:6px}
-a{color:#58a6ff;text-decoration:underline;text-underline-offset:3px}a:hover{color:#a5d6ff}
-strong{color:#e6edf3}em{color:#d2a8ff}
+a{text-decoration:underline;text-underline-offset:3px}a:hover{text-decoration-style:dashed}
 .project{margin-bottom:56px}
-figure{margin:0 0 16px;container-type:inline-size;box-shadow:0 0 0 1px #30363d;border-radius:2px;background:#0a0d12}
-.ascii{margin:0;font:400 calc(100cqw / var(--w,60))/1 "JG Mono",ui-monospace,Menlo,monospace;color:#8b949e;white-space:pre;overflow:hidden;user-select:none;letter-spacing:0}
+figure{margin:0 0 16px;container-type:inline-size;box-shadow:0 0 0 1px var(--line);border-radius:2px;background:#0a0d12}
+.md .ascii{margin:0;font:400 calc(100cqw / var(--w,60))/1 "JG Mono",ui-monospace,Menlo,monospace;color:#8b949e;white-space:pre;overflow:hidden;user-select:none;letter-spacing:0}
 figure img.halftone{display:block;width:100%;aspect-ratio:1896/1456}
 figure img.plain{display:block;width:100%;aspect-ratio:1896/1456;object-fit:cover;filter:grayscale(1) contrast(1.1);opacity:.85}
-figcaption{margin-top:10px;font-size:12px;color:#6e7681}
+figcaption{margin-top:10px;padding:0 8px 4px}
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin:0}
-.tag{font-size:12px;color:#8b949e;border:1px solid #30363d;border-radius:20px;padding:1px 10px}
-.tag.hl{color:#7ee787;border-color:#238636}
+.tag{border:1px solid var(--line);border-radius:4px;padding:0 8px}
+.tag.hl{border-color:var(--fg)}
 ul{list-style:none;margin:0;padding:0}
 li{position:relative;padding-left:22px;margin-bottom:22px}
-li::before{content:"-";position:absolute;left:4px;color:#6e7681}
-.sub{color:#a5b0bd;font-size:14px;margin:4px 0 8px}.sub p{margin:0}
-hr{border:0;border-top:1px dashed #30363d;margin:64px 0 0}
+li::before{content:"-";position:absolute;left:4px}
+.sub{margin:4px 0 8px}.sub p{margin:0}
+hr{border:0;border-top:1px dashed var(--line);margin:64px 0 0}
 footer li{margin-bottom:6px}
-@media(max-width:560px){.doc{padding:36px 18px 72px}.file{display:none}}
+@media(max-width:560px){.md{font-size:14px}.doc{padding:36px 18px 72px}.file{display:none}}

@@ -112,7 +112,7 @@
     return (cache[key] = job.then(function (r) { cache[key] = r; return r; }));
   }
   S.q.push({
-    id: 'md', label: 'README.md', css: '/styles/md.css', bg: '#0d1117', enter: 'typing', accent: '#7ee787',
+    id: 'md', label: 'README.md', css: '/styles/md.css', bg: '#0d1117', enter: 'typing', accent: '#c9d1d9',
     fonts: ['400 16px "JG Mono"', '700 16px "JG Mono"'],
     preload: function (m) {
       return Promise.all(m.projects.filter(function (p) { return p.image; }).map(function (p) { return art(p.image).catch(function () {}); }));
