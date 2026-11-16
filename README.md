@@ -130,13 +130,13 @@ node build.mjs
 
 ## Page styles
 
-Each visit draws the homepage in one of several styles (currently `classic`, the original look, `md`, a README file with grey halftone images (`?img=ascii` shows them as ASCII instead), and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
+Each visit draws the homepage in one of several styles (currently `classic`, the original look, `md`, a README file with grey halftone images (`?img=ascii` shows them as ASCII instead), `swiss`, a minimal grid, and `showcase`, a product-launch page with rounded tiles). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
 
 Styles are code only, not in the CMS. They read the same content, so CMS edits show up in every style. The CMS preview and case study pages use the plain layout. `?style=off` shows the plain server-rendered page with no style engine at all.
 
 **Try it:** `?style=classic`, `?style=md`, `?style=swiss` (one style, no switching), `?linger=10` (switch after 10 s), `?linger=off` (never switch by itself).
 
-**Entrances:** each style chooses how it arrives with `enter: '<name>'` in its `.js` file: `typing` (README.md), `skeleton` (Swiss: the layout drawn as a wireframe, then each box fills with its content), `grid` (columns, unused for now), `fade` (Classic), or `glitch` (the default when a style doesn't say). `?fx=glitch` (or any name) forces one entrance for every switch, to compare them. New ones are small functions in `styles/engine.js` (`effects`), with a `run(ctx, finish)` and an optional `setup(ctx)`.
+**Entrances:** each style chooses how it arrives with `enter: '<name>'` in its `.js` file: `typing` (README.md), `skeleton` (Swiss: the layout drawn as a wireframe, then each box fills with its content), `grid` (columns, unused for now), `rise` (Showcase: blocks marked `data-rise` float up into place), `fade` (Classic), or `glitch` (the default when a style doesn't say). `?fx=glitch` (or any name) forces one entrance for every switch, to compare them. New ones are small functions in `styles/engine.js` (`effects`), with a `run(ctx, finish)` and an optional `setup(ctx)`.
 
 **Settings** are at the top of `styles/engine.js` (`CONFIG`): `lingerSeconds`, `repeat` (false = switch once per visit), `glitchMs`.
 

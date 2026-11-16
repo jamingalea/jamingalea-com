@@ -13,7 +13,7 @@
  *           ?style=off                    the plain server-rendered page, no engine
  *           ?linger=10                    switch after 10 s instead of 60
  *           ?linger=off                   never switch by itself
- *           ?fx=glitch | typing | grid | skeleton | fade   use one entrance for every switch (default: each style's own)
+ *           ?fx=glitch | typing | grid | skeleton | rise | fade   use one entrance for every switch (default: each style's own)
  */
 (function () {
   'use strict';
@@ -455,6 +455,31 @@
         blocks.forEach(function (bl) { if (bl.el) { bl.el.style.transition = ''; bl.el.style.opacity = ''; } });
         sk.remove(); finish();
       }, start + spread + fade + 60);
+    }
+  };
+
+  // Showcase: the old page fades away and the new blocks (marked data-rise) float up into place
+  effects.rise = {
+    run: function (c, finish) {
+      var vh = c.vh, sr = c.newHost.shadowRoot;
+      var els = Array.prototype.filter.call(sr.querySelectorAll('[data-rise]'), function (e) {
+        var r = e.getBoundingClientRect(); return r.bottom > 0 && r.top < vh;
+      });
+      els.forEach(function (e) { e.style.opacity = '0'; e.style.transform = 'translateY(32px)'; });
+      c.overlay.style.transition = 'opacity 320ms ease';
+      requestAnimationFrame(function () { requestAnimationFrame(function () { c.overlay.style.opacity = '0'; }); });
+      var last = 0;
+      els.forEach(function (e, i) {
+        var d = 180 + Math.min(i, 7) * 90; last = Math.max(last, d);
+        e.style.transition = 'opacity 800ms cubic-bezier(.25,.1,.25,1) ' + d + 'ms, transform 1000ms cubic-bezier(.16,1,.3,1) ' + d + 'ms';
+      });
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        els.forEach(function (e) { e.style.opacity = '1'; e.style.transform = 'none'; });
+      }); });
+      setTimeout(function () {
+        els.forEach(function (e) { e.style.transition = ''; e.style.opacity = ''; e.style.transform = ''; });
+        finish();
+      }, last + 1050);
     }
   };
 

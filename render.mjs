@@ -311,6 +311,7 @@ const styleScripts = (model) => `<script type="application/json" id="site-model"
 <script src="/styles/classic.js" defer></script>
 <script src="/styles/md.js" defer></script>
 <script src="/styles/swiss.js" defer></script>
+<script src="/styles/showcase.js" defer></script>
 <script src="/styles/engine.js" defer></script>
 `;
 
