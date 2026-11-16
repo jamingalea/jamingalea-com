@@ -120,9 +120,28 @@ Behind the scenes the text is stored in a simple format in `content.json`: `**bo
 | `middleware.js` | Password protection for `/admin`, and publishing to GitHub |
 | `visitor-card.js` | The card script side projects load; reads `visitor-cards.json` (generated) |
 | `images/`, `fonts/` | Assets |
+| `styles/` | The page styles (see below): `engine.js`, one `.js` + `.css` pair per style, `fonts.css` and `fonts/` |
 
 If you edit `content.json` by hand, regenerate the page with:
 
 ```bash
 node build.mjs
 ```
+
+## Page styles
+
+Each visit draws the homepage in one of several styles (currently `md`, a README file, and `swiss`, a minimal grid). A visitor never gets the same style twice running (remembered in their browser), and after 60 seconds on the page it glitches into another style while keeping them on the same project.
+
+Styles are code only, not in the CMS. They read the same content, so CMS edits show up in every style. The CMS preview and case study pages use the plain layout. `?style=classic` shows the plain layout on the live site too.
+
+**Try it:** `?style=md`, `?style=swiss` (one style, no switching), `?linger=10` (switch after 10 s), `?linger=off` (never switch by itself).
+
+**Settings** are at the top of `styles/engine.js` (`CONFIG`): `lingerSeconds`, `repeat` (false = switch once per visit), `glitchMs`.
+
+**Add a style:**
+1. Copy `styles/swiss.js` and `styles/swiss.css` to `styles/<name>.js` and `.css`, change the `id`, `label`, `css` path and `bg`.
+2. Build the page in `render(model, H)`. Mark blocks with `data-anchor` (`intro`, each project's `id`, `highlights`, `highlight-N`, `footer`) so the visitor keeps their place across a switch. Put any sticky bar in an element with `data-chrome`, and avoid `position: fixed` elsewhere.
+3. Add `<script src="/styles/<name>.js" defer></script>` before the engine in `styleScripts` in `render.mjs`, then run `node build.mjs`.
+4. New fonts go in `styles/fonts/` and `styles/fonts.css` (`@font-face` doesn't work inside a style's own CSS).
+
+Reduced-motion visitors get a short crossfade instead of the glitch.

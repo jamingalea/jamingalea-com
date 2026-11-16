@@ -1,0 +1,8 @@
+/* Fonts for the page styles (self-hosted, both SIL Open Font License; see styles/fonts/*-OFL.txt).
+   Loaded by styles/engine.js. Declared here, not inside a style's CSS, because
+   @font-face rules are ignored inside a shadow tree. */
+@font-face{font-family:"JG Sans";src:url(/styles/fonts/inter-latin-wght-normal.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"JG Mono";src:url(/styles/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"JG Mono";src:url(/styles/fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"JG Mono";src:url(/styles/fonts/jetbrains-mono-latin-400-italic.woff2) format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"JG Mono";src:url(/styles/fonts/jetbrains-mono-latin-700-italic.woff2) format("woff2");font-weight:700;font-style:italic;font-display:swap}

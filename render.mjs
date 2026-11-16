@@ -201,7 +201,7 @@ ${opts.headExtra || ''}
 </head>`;
 }
 
-function footer(c) {
+function footer(c, extra = '') {
   const f = c.footer || {};
   return `<footer class="footer reveal">
   <h2 class="section-title">${esc(f.title)}</h2>
@@ -210,7 +210,7 @@ function footer(c) {
     .map((l) => `<li><a ${linkAttrs(l.url || '#')}>${esc(l.label)}${ARROW}</a></li>`)
     .join('')}</ul>
 </footer>
-<script src="/site.js" defer></script>
+${extra}<script src="/site.js" defer></script>
 </body>
 </html>
 `;
@@ -240,6 +240,78 @@ export function focusStyle(f) {
   if (Number.isNaN(x) || Number.isNaN(y) || (x === 50 && y === 50)) return '';
   return ` style="object-position:${x}% ${y}%;transform-origin:${x}% ${y}%"`;
 }
+
+/* ---------- page styles ----------
+   The homepage can be drawn in different styles (styles/*.js). It ships the plain HTML
+   below (the fallback for no-JS, search engines and the CMS preview) plus a content model
+   that /styles/engine.js reads and hands to whichever style is showing. The model is built
+   from the same data as the HTML, so hidden items, case study links and image focus points
+   behave identically in every style. Not included in the CMS preview. */
+
+const focusPosition = (f) => {
+  if (!f || typeof f !== 'object') return '';
+  const n = (v) => Math.min(100, Math.max(0, Math.round(Number(v) * 10) / 10));
+  const x = n(f.x), y = n(f.y);
+  return Number.isNaN(x) || Number.isNaN(y) || (x === 50 && y === 50) ? '' : `${x}% ${y}%`;
+};
+
+export function siteModel(c, asset = defaultAsset) {
+  setCardHosts(c);
+  // Each paragraph keeps its stored text (md) and its rendered inline HTML (html).
+  const rich = (text) => String(text ?? '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)
+    .map((md) => ({ md, html: inline(md) }));
+  const tagList = (list) => (list || []).filter((t) => t && t.label)
+    .map((t) => ({ label: t.label, highlight: !!t.highlight }));
+  // href is what a link points at (tagged for visitor cards); url is the plain address.
+  const link = (url) => ({ href: url ? tagForCard(url) : '', url: url || '', external: !!url && isExternal(url) });
+  const site = c.site || {}, intro = c.intro || {}, hl = c.highlights || {}, foot = c.footer || {};
+  return {
+    version: 1,
+    lang: site.lang || 'en-GB',
+    title: site.title || '',
+    description: site.description || '',
+    name: intro.name || '',
+    tagline: rich(intro.tagline),
+    bio: rich(intro.bio),
+    workTitle: 'Selected work',
+    projects: (c.projects || []).filter((p) => !p.hidden).map((p, i) => {
+      const study = caseStudyFor(c, p);
+      const l = study ? { href: caseStudyPath(study), url: caseStudyPath(study), external: false } : link(p.url);
+      return {
+        id: p.id || `project-${i + 1}`,
+        title: p.title || '',
+        ...l,
+        caseStudy: !!study,
+        column: p.column === 'right' ? 'right' : 'left',
+        image: p.image ? { src: asset(p.image), alt: p.imageAlt || '', focus: focusPosition(p.imageFocus) } : null,
+        text: rich(p.text),
+        tags: tagList(p.tags),
+      };
+    }),
+    highlightsTitle: hl.title || '',
+    highlights: (hl.items || []).filter((h) => !h.hidden).map((h, i) => ({
+      id: `highlight-${i + 1}`,
+      title: h.title || '',
+      ...link(h.url),
+      icon: h.icon ? asset(h.icon) : '',
+      text: rich(h.text),
+      tags: tagList(h.tags),
+    })),
+    footerTitle: foot.title || '',
+    links: (foot.links || []).filter((l) => l.label).map((l) => ({ label: l.label, ...link(l.url || '#') })),
+  };
+}
+
+// Hides the plain page for a moment while the style engine draws it, so nothing flashes.
+// A timer shows the plain page anyway if the engine doesn't start. ?style=classic skips it.
+const STYLE_HEAD = `<style>html.style-pending body{visibility:hidden}</style>
+<script>(function(){var d=document.documentElement;if(/[?&]style=classic(&|$)/.test(location.search))return;d.classList.add('style-pending');setTimeout(function(){d.classList.remove('style-pending')},2500)})()</script>`;
+
+const styleScripts = (model) => `<script type="application/json" id="site-model">${JSON.stringify(model).replace(/</g, '\\u003c')}</script>
+<script src="/styles/md.js" defer></script>
+<script src="/styles/swiss.js" defer></script>
+<script src="/styles/engine.js" defer></script>
+`;
 
 function project(p, asset, c) {
   const study = caseStudyFor(c, p);
@@ -276,8 +348,9 @@ export function renderSite(c, opts = {}) {
   const hl = c.highlights || {};
   const hlItems = (hl.items || []).filter((h) => !h.hidden);
   const intro = c.intro || {};
+  const styled = !opts.preview;
 
-  return `${head(c, { path: '/', title: site.title, description: site.description, ogTitle: site.ogTitle, ogDescription: site.ogDescription }, opts)}
+  return `${head(c, { path: '/', title: site.title, description: site.description, ogTitle: site.ogTitle, ogDescription: site.ogDescription }, styled ? { ...opts, headExtra: (opts.headExtra || '') + STYLE_HEAD } : opts)}
 <body>
 <header class="hero">
   <div class="hero__intro">
@@ -296,7 +369,7 @@ export function renderSite(c, opts = {}) {
     <div class="ticker"><ul class="ticker__track" style="--count:${hlItems.length}">${hlItems.map((h) => highlight(h, asset)).join('')}</ul></div>
   </section>` : ''}
 </main>
-${footer(c)}`;
+${footer(c, styled ? styleScripts(siteModel(c, asset)) : '')}`;
 }
 
 /* ---------- case study page ---------- */
