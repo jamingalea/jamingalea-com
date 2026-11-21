@@ -48,7 +48,7 @@ a:hover{opacity:.7}
 .work{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
 .work__col{display:flex;flex-direction:column;gap:120px}
 .work__col--left{width:60%}
-.work__col--right{width:33%;margin-top:200px}
+.work__col--right{width:33%;margin-top:200px;will-change:transform}
 .project__media{display:block;background:#222;overflow:hidden}
 a.project__media:hover{opacity:1}
 a.project__media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
@@ -86,9 +86,15 @@ a.project__media:hover img{transform:scale(1.02)}
 .footer{display:flex;padding:200px var(--gutter);gap:40px}
 .footer .section-title{width:calc(60% + 163px - var(--gutter))}
 
-/* Scroll reveal (only when JS runs) */
-.js .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+/* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
+   enter together appear one after another. */
+.js .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--reveal-delay,0ms)}
 .js .reveal.is-in{opacity:1;transform:none}
+/* Projects: the image rises in first, then the title, text and tags just after. */
+.js .project.reveal{opacity:1;transform:none;transition:none}
+.js .project.reveal>*{opacity:0;transform:translateY(40px);transition:opacity .9s ease,transform 1s cubic-bezier(.2,.7,.2,1);transition-delay:var(--reveal-delay,0ms)}
+.js .project.reveal>.project__body{transition-delay:calc(var(--reveal-delay,0ms) + 120ms)}
+.js .project.reveal.is-in>*{opacity:1;transform:none}
 
 /* Tablet */
 @media (max-width:1199px){
@@ -165,7 +171,7 @@ a.project__media:hover img{transform:scale(1.02)}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .js .reveal{opacity:1;transform:none;transition:none}
+  .js .reveal,.js .project.reveal>*{opacity:1;transform:none;transition:none}
   .ticker.is-running .ticker__track{animation:none}
   .ticker.is-running{overflow-x:auto}
 }
