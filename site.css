@@ -64,7 +64,7 @@ a.project__media:hover img{transform:scale(1.02)}
 .project__text a,.highlight__text a,.hero__tagline a{color:var(--fg)}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
-.tag{position:relative;font-size:var(--fs-small);line-height:26px;padding:0 9px;border-radius:10px;color:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+.tag{position:relative;font-size:var(--fs-small);line-height:26px;padding:4px 10px;border-radius:10px;color:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .tag--highlight{color:#4f9b30;box-shadow:inset 0 0 0 1px var(--green);color:var(--green);filter:brightness(1.55)}
 
 /* Other highlights: an endless ticker (site.js duplicates the items) */
