@@ -239,7 +239,7 @@ function changed({ save = true } = {}) {
 
 /* ---------- preview ---------- */
 let previewTimer;
-const PREVIEW_HEAD = `<base target="_blank"><style>.js .reveal{opacity:1!important;transform:none!important;transition:none!important}</style>`;
+const PREVIEW_HEAD = `<base target="_blank"><style>.js .reveal,.js .reveal>*{opacity:1!important;transform:none!important;transition:none!important}</style>`;
 function assetUrl(p) {
   if (!p) return '';
   if (state.pending.has(p)) return state.pending.get(p).url;
