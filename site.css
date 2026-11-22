@@ -35,9 +35,8 @@ em{font-style:italic}
 a:hover{opacity:.7}
 .arrow{width:.7em;height:.7em;margin-left:.45em;vertical-align:.02em;overflow:visible}
 
-/* Hero: stays put while the work scrolls over it, fading out (site.js) */
-.hero{position:sticky;top:0;z-index:0;min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px;pointer-events:none}
-.hero a{pointer-events:auto}
+/* Hero: the intro, filling the first screen; it scrolls away with the page */
+.hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px}
 .hero__intro{width:min(591px,45%)}
 .hero__name{line-height:22px;margin-bottom:4px}
 .hero__tagline,.hero__bio{color:var(--muted)}
@@ -45,7 +44,7 @@ a:hover{opacity:.7}
 .hero__bio p+p{margin-top:var(--lh)}
 
 /* Work: two columns, large on the left, small (square) on the right */
-.work{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
+.work{display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
 .work__col{display:flex;flex-direction:column;gap:120px}
 .work__col--left{width:60%}
 .work__col--right{width:33%;margin-top:200px;will-change:transform}
