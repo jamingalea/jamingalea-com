@@ -152,6 +152,50 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .subcard{border:1px solid var(--line);border-radius:10px;padding:16px 16px 0;margin-bottom:12px}
 .badge{font-size:11px;padding:1px 6px;border-radius:999px;background:var(--chip);color:var(--muted);font-weight:400;margin-left:6px}
 
+/* Images: favicon, social preview, home-screen icon (Settings & SEO) */
+.images{border:1px solid var(--line);border-radius:16px;padding:0 20px;margin-bottom:24px;container-type:inline-size}
+.images__row{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;padding:22px 0;border-top:1px solid var(--line)}
+.images__row:first-child{border-top:0}
+.images__label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.images__label strong{font-weight:500}
+.images__preview--pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@container (min-width:640px){.images__row{grid-template-columns:minmax(0,.75fr) minmax(0,1.6fr);gap:28px}}
+.images .drop{outline:2px dashed var(--focus);outline-offset:3px}
+.fav__foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;min-height:30px}
+
+/* Browser tab mock-up (fixed colours: it depicts a browser, not the CMS) */
+.mock-browser{position:relative;aspect-ratio:36/22;border-radius:12px;overflow:hidden;background:linear-gradient(155deg,#d9ecfb 0%,#b9d9f5 45%,#7fb2e8 100%)}
+.mock-browser__window{position:absolute;left:11%;top:18%;right:-6%;bottom:-6%;display:flex;flex-direction:column;border-radius:10px 0 0 0;overflow:hidden;box-shadow:0 6px 24px rgba(0,30,80,.18)}
+.mock-browser__tabs{display:flex;align-items:flex-end;gap:4px;height:42px;padding:6px 6px 0;flex:none}
+.mock-browser__page{flex:1}
+.mock-tab{display:flex;align-items:center;justify-content:center;width:44px;height:36px;flex:none}
+.mock-tab--active{width:auto;max-width:62%;min-width:0;justify-content:flex-start;gap:8px;padding:0 12px;border-radius:9px 9px 0 0}
+.mock-tab__icon{width:20px;height:20px;object-fit:contain;flex:none;display:block}
+.mock-tab__icon--empty{border:1.5px dashed currentColor;border-radius:5px;opacity:.45}
+.mock-tab__icon--other{border-radius:5px;opacity:.3;background:currentColor}
+.mock-tab__icon--other2{border-radius:50%;opacity:.3;background:currentColor;width:18px;height:18px}
+.mock-tab__title{font:12px/1.2 system-ui,-apple-system,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mock-browser--light .mock-browser__tabs{background:#dde3ea;color:#3c4043}
+.mock-browser--light .mock-tab--active,.mock-browser--light .mock-browser__page{background:#fff;color:#202124}
+.mock-browser--dark .mock-browser__tabs{background:#141414;color:#e8eaed}
+.mock-browser--dark .mock-tab--active,.mock-browser--dark .mock-browser__page{background:#000;color:#e8eaed}
+
+/* Social preview */
+.mock-og{aspect-ratio:1200/630;border-radius:12px;background:var(--chip) center/cover no-repeat;border:1px solid var(--line)}
+.mock-og--empty{display:grid;place-items:center}
+
+/* Phone home-screen mock-up */
+.mock-phone{position:relative;aspect-ratio:75/39;border-radius:12px;overflow:hidden;background:#000}
+.mock-phone__frame{position:absolute;left:18%;top:8%;width:120%;height:150%;border-radius:64px;border:3px solid #48484a;box-shadow:inset 0 0 0 7px #101010,0 0 0 1px #1c1c1e}
+.mock-phone__apps{position:absolute;left:30%;top:31%;display:flex;gap:28px}
+.mock-app{display:flex;flex-direction:column;align-items:center;gap:8px;width:76px}
+.mock-app__icon{width:64px;height:64px;border-radius:15px;object-fit:cover;display:block;background:#2c2c2e}
+.mock-app__icon--empty{display:grid;place-items:center;border:1.5px dashed #636366;background:none}
+.mock-app__icon--empty .img-icon{stroke:#8e8e93;opacity:1}
+.mock-app__icon--other{display:grid;place-items:center;background:linear-gradient(180deg,#5a5a5e,#2c2c2e)}
+.mock-app__glyph{width:30px;height:24px;background:repeating-linear-gradient(180deg,rgba(255,255,255,.85) 0 3px,transparent 3px 9px);border-radius:2px}
+.mock-app__name{font:12px/1.2 system-ui,-apple-system,sans-serif;color:#fff;max-width:84px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 /* Visitor card section (inside a project) */
 .vc{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:8px 0 24px}
 .vc__title{display:block;font-weight:500;margin-bottom:12px}
