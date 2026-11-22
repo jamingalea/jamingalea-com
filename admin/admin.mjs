@@ -940,6 +940,117 @@ function analyticsPanel() {
   return [h('div.analytics__head', h('p.intro', { style: { margin: 0 } }, 'Visits to your site.'), ranges), body];
 }
 
+/* ---------- site images: favicon (light/dark), social preview, home-screen icon ---------- */
+
+// Upload / remove for one image field; also accepts a dropped file on any element.
+function uploader(obj, key, kind, nameHint, onChange) {
+  const input = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  const take = async (f) => {
+    if (!f) return;
+    try {
+      const { path, w, h: hgt } = await addImage(f, kind, nameHint);
+      obj[key] = path;
+      changed(); onChange({ w, h: hgt });
+    } catch (e) { toast(e.message || String(e)); }
+  };
+  input.addEventListener('change', () => { take(input.files[0]); input.value = ''; });
+  return {
+    input,
+    pick: () => input.click(),
+    remove: () => { obj[key] = ''; changed(); onChange({}); },
+    droppable(el) {
+      el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('drop'); });
+      el.addEventListener('dragleave', () => el.classList.remove('drop'));
+      el.addEventListener('drop', (e) => { e.preventDefault(); el.classList.remove('drop'); take(e.dataTransfer.files[0]); });
+      return el;
+    },
+  };
+}
+
+const placeholderGlyph = () => h('span.mock-app__glyph');
+
+function imagesSection(s, onSocialChange) {
+  const siteTitle = () => s.title || state.content.intro?.name || 'Your site';
+  const shortName = () => (state.content.intro?.name || s.title || 'Your site').split(/\s+[—–-]\s+/)[0];
+  const box = h('div.images');
+  const draw = () => box.replaceChildren(faviconRow(), socialRow(), touchRow());
+
+  // Favicon: browser tabs in light and dark, each with its own upload.
+  function tabMock(theme) {
+    const key = theme === 'dark' ? 'faviconDark' : 'favicon';
+    const src = s[key] || (theme === 'dark' ? s.favicon : '');
+    const icon = src ? h('img.mock-tab__icon', { src: assetUrl(src), alt: '' }) : h('span.mock-tab__icon.mock-tab__icon--empty');
+    const up = uploader(s, key, 'favicon', theme === 'dark' ? 'favicon-dark' : 'favicon', draw);
+    const usingLight = theme === 'dark' && !s.faviconDark && s.favicon;
+    return h('div.fav',
+      up.droppable(h(`div.mock-browser.mock-browser--${theme}`,
+        h('div.mock-browser__window',
+          h('div.mock-browser__tabs',
+            h('span.mock-tab', h('span.mock-tab__icon.mock-tab__icon--other')),
+            h('span.mock-tab.mock-tab--active', icon, h('span.mock-tab__title', siteTitle())),
+            h('span.mock-tab', h('span.mock-tab__icon.mock-tab__icon--other2'))),
+          h('div.mock-browser__page')))),
+      h('div.fav__foot',
+        h('span', theme === 'dark' ? 'Dark' : 'Light', usingLight && h('span.hint', ' · using light')),
+        h('span.row',
+          s[key] && h('button.btn.btn--sm.btn--ghost.btn--danger', { type: 'button', onclick: up.remove }, 'Remove'),
+          h('button.btn.btn--sm', { type: 'button', onclick: up.pick }, 'Upload'))),
+      up.input);
+  }
+  function faviconRow() {
+    return h('div.images__row',
+      h('div.images__label', h('strong', 'Favicon'), h('span.hint', '64 × 64 pixels'),
+        h('span.hint', 'The small icon in browser tabs and bookmarks. Add a dark version if yours is hard to see on dark tabs.')),
+      h('div.images__preview.images__preview--pair', tabMock('light'), tabMock('dark')));
+  }
+
+  // Social preview: the image shown when the site is shared.
+  function socialRow() {
+    const note = h('span.hint.warn');
+    const up = uploader(s, 'ogImage', 'og', 'og-image', ({ w, h: hgt }) => {
+      draw(); onSocialChange();
+      if (w && Math.abs(w / hgt - 1.905) > 0.1) {
+        $('.images .og-note').textContent = `This image is ${w} × ${hgt}; some sites will crop it. 1200 × 630 fits best.`;
+      }
+    });
+    note.className = 'hint warn og-note';
+    const pv = s.ogImage
+      ? h('div.mock-og', { style: { backgroundImage: `url("${assetUrl(s.ogImage)}")` } })
+      : h('div.mock-og.mock-og--empty', imageIcon());
+    return h('div.images__row',
+      h('div.images__label', h('strong', 'Social preview'), h('span.hint', '1200 × 630 pixels'),
+        h('span.hint', 'Shown when your site is shared on LinkedIn, iMessage, Slack and so on.'),
+        h('span.row', { style: { marginTop: '8px' } },
+          h('button.btn.btn--sm', { type: 'button', onclick: up.pick }, 'Upload'),
+          s.ogImage && h('button.btn.btn--sm.btn--ghost.btn--danger', { type: 'button', onclick: up.remove }, 'Remove')),
+        note, up.input),
+      h('div.images__preview', up.droppable(pv)));
+  }
+
+  // Apple touch icon: how the site looks saved to an iPhone home screen.
+  function touchRow() {
+    const up = uploader(s, 'appleTouchIcon', 'favicon', 'apple-touch-icon', draw);
+    const icon = s.appleTouchIcon
+      ? h('img.mock-app__icon', { src: assetUrl(s.appleTouchIcon), alt: '' })
+      : h('span.mock-app__icon.mock-app__icon--empty', imageIcon());
+    return h('div.images__row',
+      h('div.images__label', h('strong', 'Apple touch icon'), h('span.hint', '180 × 180 pixels'),
+        h('span.hint', 'Used when someone adds your site to their phone’s home screen. Use a square image without transparency; the phone rounds the corners.'),
+        h('span.row', { style: { marginTop: '8px' } },
+          h('button.btn.btn--sm', { type: 'button', onclick: up.pick }, 'Upload'),
+          s.appleTouchIcon && h('button.btn.btn--sm.btn--ghost.btn--danger', { type: 'button', onclick: up.remove }, 'Remove')),
+        up.input),
+      h('div.images__preview', up.droppable(h('div.mock-phone',
+        h('div.mock-phone__frame'),
+        h('div.mock-phone__apps',
+          h('span.mock-app', icon, h('span.mock-app__name', shortName())),
+          h('span.mock-app', h('span.mock-app__icon.mock-app__icon--other', placeholderGlyph()), h('span.mock-app__name', 'Notes')))))));
+  }
+
+  draw();
+  return box;
+}
+
 /* ---------- visitor cards (shown on a side project's own site) ---------- */
 function previewVisitorCard(p) {
   const frame = $('#preview');
@@ -1147,7 +1258,6 @@ const panels = {
     };
     drawPreviews();
     const live = { onInput: drawPreviews };
-    const ogNote = h('small.hint');
     return [
       h('h3.group', 'Search engines'),
       text('Page title', s, 'title', { limit: 60, ...live, hint: 'Shown in the browser tab and search results.' }),
@@ -1161,20 +1271,14 @@ const panels = {
       h('span.hint', 'Search result preview'),
       serp,
 
+      h('h3.group', 'Images'),
+      imagesSection(s, drawPreviews),
+
       h('h3.group', 'Social sharing (Open Graph)'),
-      imageField('Share image', s, 'ogImage', 'og', {
-        hint: 'Recommended 1200 × 630.', nameHint: () => 'og-image', onChange: drawPreviews,
-        onSize: (w, hgt) => { ogNote.textContent = Math.abs(w / hgt - 1.905) > 0.1 ? `This image is ${w} × ${hgt}; some sites will crop it. 1200 × 630 fits best.` : ''; },
-      }),
-      ogNote,
       text('Share title', s, 'ogTitle', { placeholder: s.title, ...live, hint: 'Optional. Leave empty to use the page title.' }),
       text('Share description', s, 'ogDescription', { placeholder: 'Same as description', ...live, hint: 'Optional. Leave empty to use the description.' }),
       h('span.hint', 'Link preview'),
       social,
-
-      h('h3.group', 'Icons'),
-      imageField('Favicon', s, 'favicon', 'favicon', { contain: true, hint: 'Square PNG, at least 64 × 64.', nameHint: () => 'favicon' }),
-      imageField('Home screen icon', s, 'appleTouchIcon', 'favicon', { contain: true, hint: 'Square PNG, 180 × 180.', nameHint: () => 'apple-touch-icon' }),
 
       h('h3.group', 'Site'),
       text('Site address', s, 'url', { type: 'url', ...live, hint: 'Used for the canonical link and share image URL.' }),

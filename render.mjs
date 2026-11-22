@@ -190,7 +190,7 @@ ${ogImage ? `<meta property="og:image" content="${esc(abs(ogImage))}">` : ''}
 <meta name="twitter:title" content="${esc(page.ogTitle || page.title)}">
 <meta name="twitter:description" content="${esc(page.ogDescription || page.description)}">
 ${ogImage ? `<meta name="twitter:image" content="${esc(abs(ogImage))}">` : ''}
-${site.favicon ? `<link rel="icon" href="${esc(asset(site.favicon))}">` : ''}
+${faviconLinks(site, asset)}
 ${site.appleTouchIcon ? `<link rel="apple-touch-icon" href="${esc(asset(site.appleTouchIcon))}">` : ''}
 <meta name="theme-color" content="#1a1a1a">
 <link rel="preload" href="/fonts/aqiiD4LUKkKzXdjGL5UzHq8bo5w.woff2" as="font" type="font/woff2" crossorigin>
@@ -199,6 +199,17 @@ ${site.appleTouchIcon ? `<link rel="apple-touch-icon" href="${esc(asset(site.app
 ${opts.preview ? '' : ANALYTICS}
 ${opts.headExtra || ''}
 </head>`;
+}
+
+// One favicon, or a light and a dark one picked by the browser's colour scheme.
+function faviconLinks(site, asset) {
+  const light = site.favicon, dark = site.faviconDark;
+  if (light && dark) {
+    return `<link rel="icon" href="${esc(asset(light))}" media="(prefers-color-scheme: light)">
+<link rel="icon" href="${esc(asset(dark))}" media="(prefers-color-scheme: dark)">`;
+  }
+  const one = light || dark;
+  return one ? `<link rel="icon" href="${esc(asset(one))}">` : '';
 }
 
 function footer(c) {
