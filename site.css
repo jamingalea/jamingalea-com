@@ -17,7 +17,7 @@
   --fg:#fff;
   --muted:rgba(255,255,255,.4);
   --green:#31691b;
-  --gutter:40px;
+  --gutter:64px;
   --fs:18px;
   --lh:26px;
   --fs-small:16px;
@@ -35,9 +35,8 @@ em{font-style:italic}
 a:hover{opacity:.7}
 .arrow{width:.7em;height:.7em;margin-left:.45em;vertical-align:.02em;overflow:visible}
 
-/* Hero: stays put while the work scrolls over it, fading out (site.js) */
-.hero{position:sticky;top:0;z-index:0;min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px;pointer-events:none}
-.hero a{pointer-events:auto}
+/* Hero: the intro, filling the first screen; it scrolls away with the page */
+.hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px}
 .hero__intro{width:min(591px,45%)}
 .hero__name{line-height:22px;margin-bottom:4px}
 .hero__tagline,.hero__bio{color:var(--muted)}
@@ -45,7 +44,7 @@ a:hover{opacity:.7}
 .hero__bio p+p{margin-top:var(--lh)}
 
 /* Work: two columns, large on the left, small (square) on the right */
-.work{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
+.work{display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
 .work__col{display:flex;flex-direction:column;gap:120px}
 .work__col--left{width:60%}
 .work__col--right{width:33%;margin-top:200px;will-change:transform}
@@ -98,6 +97,7 @@ a.project__media:hover img{transform:scale(1.02)}
 
 /* Tablet */
 @media (max-width:1199px){
+  :root{--gutter:48px}
   .hero{flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
   .hero__intro,.hero__bio{width:100%;max-width:730px}
   .work{display:block;padding-top:120px}
@@ -111,10 +111,10 @@ a.project__media:hover img{transform:scale(1.02)}
 
 /* Phone */
 @media (max-width:809px){
-  :root{--gutter:20px;--fs:16px;--lh:24px}
+  :root{--gutter:24px;--fs:16px;--lh:24px}
   .hero{padding-top:160px}
   .hero__name{line-height:19px}
-  .work{padding:0 0 0}
+  .work{padding:100px 0 0}
   .work__col--right{display:flex;margin-top:120px}
   .project__body{padding:20px var(--gutter) 0}
   .project__text p+p{margin-top:12px}

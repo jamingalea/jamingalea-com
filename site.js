@@ -1,31 +1,4 @@
 (function () {
-  // Fade the hero out as the work scrolls over it. A hero taller than the screen
-  // scrolls normally until its last line is in view, then pins and starts to fade,
-  // so the whole intro can be read first.
-  var hero = document.querySelector('.hero');
-  if (hero) {
-    var ticking = false, overflow = 0;
-    var measure = function () {
-      // pin with a little room under the last line, not flush with the bottom of the screen
-      overflow = Math.max(0, hero.offsetHeight + Math.round(window.innerHeight * 0.12) - window.innerHeight);
-      hero.style.top = overflow ? -overflow + 'px' : '';
-    };
-    var update = function () {
-      var o = Math.max(0, 1 - Math.max(0, window.scrollY - overflow) / (window.innerHeight * 0.55));
-      hero.style.opacity = o.toFixed(3);
-      hero.style.visibility = o === 0 ? 'hidden' : '';
-      ticking = false;
-    };
-    var refresh = function () { measure(); update(); };
-    window.addEventListener('scroll', function () {
-      if (!ticking) { ticking = true; requestAnimationFrame(update); }
-    }, { passive: true });
-    window.addEventListener('resize', refresh);
-    if ('ResizeObserver' in window) new ResizeObserver(refresh).observe(hero);
-    if (document.fonts) document.fonts.ready.then(refresh);
-    refresh();
-  }
-
   // The right-hand column scrolls up a little faster than the page (wide screens
   // only, where the columns sit side by side). The extra movement is limited to
   // the time the projects are on screen.
