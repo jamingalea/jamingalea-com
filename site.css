@@ -17,7 +17,7 @@
   --fg:#fff;
   --muted:rgba(255,255,255,.4);
   --green:#31691b;
-  --gutter:40px;
+  --gutter:64px;
   --fs:18px;
   --lh:26px;
   --fs-small:16px;
@@ -97,6 +97,7 @@ a.project__media:hover img{transform:scale(1.02)}
 
 /* Tablet */
 @media (max-width:1199px){
+  :root{--gutter:48px}
   .hero{flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
   .hero__intro,.hero__bio{width:100%;max-width:730px}
   .work{display:block;padding-top:120px}
@@ -110,7 +111,7 @@ a.project__media:hover img{transform:scale(1.02)}
 
 /* Phone */
 @media (max-width:809px){
-  :root{--gutter:20px;--fs:16px;--lh:24px}
+  :root{--gutter:24px;--fs:16px;--lh:24px}
   .hero{padding-top:160px}
   .hero__name{line-height:19px}
   .work{padding:100px 0 0}
