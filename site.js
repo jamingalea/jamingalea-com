@@ -1,4 +1,36 @@
 (function () {
+  // The intro text fades out as it scrolls up the screen, linked to the scroll.
+  // Each piece (name, introduction, each About paragraph) fades by its own
+  // position, so text further down stays readable until it gets there too.
+  // A piece starts fading from where it sits on load (or 30% down the screen,
+  // if lower) and is fully faded once it's half off the top.
+  var fadeEls = Array.prototype.slice.call(document.querySelectorAll('.hero__name, .hero__tagline p, .hero__bio p'));
+  if (fadeEls.length) {
+    var fadeFrom = [], fTick = false;
+    var fade = function () {
+      fTick = false;
+      fadeEls.forEach(function (el, i) {
+        var r = el.getBoundingClientRect();
+        var end = -r.height / 2;
+        var o = (r.top - end) / Math.max(fadeFrom[i] - end, 1);
+        o = o >= 1 ? 1 : o <= 0 ? 0 : o;
+        el.style.opacity = o === 1 ? '' : o.toFixed(3);
+      });
+    };
+    var measureFade = function () {
+      var vh = window.innerHeight;
+      fadeEls.forEach(function (el, i) {
+        var docTop = el.getBoundingClientRect().top + window.scrollY;
+        fadeFrom[i] = Math.min(docTop, vh * 0.3);
+      });
+      fade();
+    };
+    window.addEventListener('scroll', function () { if (!fTick) { fTick = true; requestAnimationFrame(fade); } }, { passive: true });
+    window.addEventListener('resize', measureFade);
+    if (document.fonts) document.fonts.ready.then(measureFade);
+    measureFade();
+  }
+
   // The right-hand column scrolls up a little faster than the page (wide screens
   // only, where the columns sit side by side). The extra movement is limited to
   // the time the projects are on screen.
