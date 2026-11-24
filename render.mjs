@@ -67,6 +67,11 @@ const ARROW_RIGHT =
 const ANALYTICS = `<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
 <script defer src="/_vercel/insights/script.js"></script>`;
 
+// Homepage load sequence (site.js): the intro appears first, centred on screen, then the
+// rest of the page. Skipped for reduced motion and links to a section. If site.js never
+// runs, everything is shown after 4 seconds anyway.
+const INTRO_SEQUENCE = `<script>(function(r){if(location.hash||matchMedia('(prefers-reduced-motion: reduce)').matches)return;r.classList.add('intro-seq');setTimeout(function(){if(r.classList.contains('intro-seq'))r.classList.add('intro-in','intro-done')},4000)})(document.documentElement)</script>`;
+
 const defaultAsset =(p) => (!p ? '' : /^(https?:|data:|blob:|\/)/.test(p) ? p : '/' + p);
 
 /* ---------- case studies ---------- */
@@ -196,6 +201,7 @@ ${site.appleTouchIcon ? `<link rel="apple-touch-icon" href="${esc(asset(site.app
 <link rel="preload" href="/fonts/aqiiD4LUKkKzXdjGL5UzHq8bo5w.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/site.css">
 <script>document.documentElement.classList.add('js')</script>
+${page.introSequence && !opts.preview ? INTRO_SEQUENCE : ''}
 ${opts.preview ? '' : ANALYTICS}
 ${opts.headExtra || ''}
 </head>`;
@@ -288,7 +294,7 @@ export function renderSite(c, opts = {}) {
   const hlItems = (hl.items || []).filter((h) => !h.hidden);
   const intro = c.intro || {};
 
-  return `${head(c, { path: '/', title: site.title, description: site.description, ogTitle: site.ogTitle, ogDescription: site.ogDescription }, opts)}
+  return `${head(c, { path: '/', title: site.title, description: site.description, ogTitle: site.ogTitle, ogDescription: site.ogDescription, introSequence: true }, opts)}
 <body>
 <header class="hero">
   <div class="hero__intro">
