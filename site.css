@@ -47,7 +47,7 @@ a:hover{opacity:.7}
 .hero__name{line-height:22px;margin-bottom:4px}
 .hero__tagline,.hero__bio{color:var(--muted)}
 .hero__bio{grid-column:9 / span 4}
-.hero__bio p+p{margin-top:var(--lh)}
+.hero__tagline p+p,.hero__bio p+p{margin-top:var(--lh)}
 
 /* Work: two columns, large on the left, small (square) on the right */
 .work{padding:160px var(--gutter) 0}
