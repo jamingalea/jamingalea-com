@@ -163,7 +163,7 @@
   var describeGrid = function () {
     var cols = gridOverlay.querySelectorAll('.grid-overlay__col');
     var css = getComputedStyle(gridOverlay.firstChild);
-    gridLabel.textContent = '12 columns · ' + Math.round(cols[0].getBoundingClientRect().width) + 'px wide · ' +
+    gridLabel.textContent = css.gridTemplateColumns.split(' ').length + ' columns · ' + Math.round(cols[0].getBoundingClientRect().width) + 'px wide · ' +
       parseFloat(css.columnGap) + 'px gaps · ' + parseFloat(css.paddingLeft) + 'px margins  (G to hide)';
   };
   var showGrid = function (on) {
