@@ -19,7 +19,8 @@
   --green:#31691b;
   --gutter:64px;
   --page-max:1600px; /* wider screens show even space either side */
-  --grid-gap:24px;   /* gap between the 12 columns of the layout grid */
+  --grid-cols:12;    /* layout grid: 12 columns on desktop, 8 on tablets, 4 on phones */
+  --grid-gap:24px;   /* gap between columns: 24 / 32 / 16px */
   --fs:18px;
   --lh:26px;
   --fs-small:16px;
@@ -41,7 +42,7 @@ a:hover{opacity:.7}
 
 /* Hero: the intro, filling the first screen; it scrolls away with the page */
 /* Layout grid: 12 columns. Projects: left 1–7, gap 8, right 9–12. Intro and footer use the same columns. */
-.hero,.work,.footer{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
+.hero,.work,.footer{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
 .hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0}
 .hero__intro{grid-column:1 / span 6;max-width:591px}
 .hero__name{line-height:22px;margin-bottom:4px}
@@ -119,19 +120,20 @@ a.project__media:hover img{transform:scale(1.02)}
 
 /* Tablet */
 @media (max-width:1199px){
-  :root{--gutter:48px}
+  :root{--gutter:48px;--grid-cols:8;--grid-gap:32px}
   .hero{display:flex;flex-direction:column;justify-content:flex-start;min-height:0;padding-top:200px;gap:var(--lh)} /* no longer fills the screen, so the gap below stays even */
   .hero__intro,.hero__bio{width:100%;max-width:730px}
   .work{display:block;padding-top:100px}
   .work__col--left .project__body{max-width:none}
-  .work__col--right{margin-top:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px 40px}
+  .work__col--right{margin-top:120px;display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));gap:80px var(--grid-gap)}
+  .work__col--right>.project{grid-column:span 4} /* two squares side by side, 4 of 8 columns each */
   .highlights{padding-top:120px}
   .footer{display:flex;flex-direction:column;gap:12px;padding:80px var(--gutter)}
 }
 
 /* Phone */
 @media (max-width:809px){
-  :root{--gutter:24px;--fs:16px;--lh:24px}
+  :root{--gutter:24px;--grid-cols:4;--grid-gap:16px;--fs:16px;--lh:24px}
   .hero{padding-top:160px}
   .hero__name{line-height:19px}
   .work{padding:64px 0 0}
@@ -189,6 +191,15 @@ a.project__media:hover img{transform:scale(1.02)}
   .cs-quote blockquote{margin:0;font-size:22px;line-height:30px}
   .cs-next{margin-top:120px}
 }
+
+/* Hidden layout grid (press G; site.js). Matches the page width, margins and 12 columns. */
+.grid-overlay{position:fixed;inset:0;z-index:2147483000;pointer-events:none;display:none}
+.grid-overlay.is-on{display:block}
+.grid-overlay__inner{height:100%;max-width:var(--page-max);margin:0 auto;padding:0 var(--gutter);display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap)}
+.grid-overlay__col{background:rgba(255,77,77,.07);box-shadow:inset 1px 0 rgba(255,77,77,.35),inset -1px 0 rgba(255,77,77,.35)}
+@media (max-width:1199px){.grid-overlay__col:nth-child(n+9){display:none}}
+@media (max-width:809px){.grid-overlay__col:nth-child(n+5){display:none}}
+.grid-overlay__label{position:fixed;left:12px;bottom:12px;padding:6px 9px;border-radius:6px;background:rgba(0,0,0,.72);color:#ff7a7a;font:12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;max-width:calc(100vw - 24px)}
 
 @media (prefers-reduced-motion:reduce){
   .js .reveal,.js .project.reveal>*{opacity:1;transform:none;transition:none}
