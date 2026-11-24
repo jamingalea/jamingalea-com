@@ -19,6 +19,7 @@
   --green:#31691b;
   --gutter:64px;
   --page-max:1600px; /* wider screens show even space either side */
+  --grid-gap:24px;   /* gap between the 12 columns of the layout grid */
   --fs:18px;
   --lh:26px;
   --fs-small:16px;
@@ -39,18 +40,20 @@ a:hover{opacity:.7}
 .arrow{width:.7em;height:.7em;margin-left:.45em;vertical-align:.02em;overflow:visible}
 
 /* Hero: the intro, filling the first screen; it scrolls away with the page */
-.hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0;display:flex;justify-content:space-between;gap:40px}
-.hero__intro{width:min(591px,45%)}
+/* Layout grid: 12 columns. Projects: left 1–7, gap 8, right 9–12. Intro and footer use the same columns. */
+.hero,.work,.footer{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
+.hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0}
+.hero__intro{grid-column:1 / span 6;max-width:591px}
 .hero__name{line-height:22px;margin-bottom:4px}
 .hero__tagline,.hero__bio{color:var(--muted)}
-.hero__bio{width:33%}
+.hero__bio{grid-column:9 / span 4}
 .hero__bio p+p{margin-top:var(--lh)}
 
 /* Work: two columns, large on the left, small (square) on the right */
-.work{display:flex;justify-content:space-between;align-items:flex-start;padding:160px var(--gutter) 0}
+.work{padding:160px var(--gutter) 0}
 .work__col{display:flex;flex-direction:column;gap:120px}
-.work__col--left{width:60%}
-.work__col--right{width:33%;margin-top:200px;will-change:transform}
+.work__col--left{grid-column:1 / span 7}
+.work__col--right{grid-column:9 / span 4;margin-top:200px;will-change:transform}
 .project__media{display:block;background:#222;overflow:hidden}
 a.project__media:hover{opacity:1}
 a.project__media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
@@ -85,8 +88,9 @@ a.project__media:hover img{transform:scale(1.02)}
 .highlight__title{margin-bottom:12px}
 .highlight .tags{margin-top:12px}
 
-.footer{display:flex;padding:200px var(--gutter);gap:40px}
-.footer .section-title{width:calc(60% + 163px - var(--gutter))}
+.footer{padding:200px var(--gutter)}
+.footer .section-title{grid-column:1 / span 8}
+.footer__links{grid-column:9 / span 4}
 
 /* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
    enter together appear one after another. */
@@ -101,15 +105,13 @@ a.project__media:hover img{transform:scale(1.02)}
 /* Tablet */
 @media (max-width:1199px){
   :root{--gutter:48px}
-  .hero{flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
+  .hero{display:flex;flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
   .hero__intro,.hero__bio{width:100%;max-width:730px}
   .work{display:block;padding-top:120px}
-  .work__col--left{width:100%}
   .work__col--left .project__body{max-width:none}
-  .work__col--right{width:100%;margin-top:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px 40px}
+  .work__col--right{margin-top:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px 40px}
   .highlights{padding-top:120px}
-  .footer{flex-direction:column;gap:12px;padding:80px var(--gutter)}
-  .footer .section-title{width:auto}
+  .footer{display:flex;flex-direction:column;gap:12px;padding:80px var(--gutter)}
 }
 
 /* Phone */
