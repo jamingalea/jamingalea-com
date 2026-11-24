@@ -125,68 +125,61 @@
         "title": "SomeOne in London",
         "url": "https://someoneinlondon.com/",
         "icon": "images/6Rf40eslG0zQeSu75Qz3QMNbHI.png",
+        "iconMeta": {
+          "w": 134,
+          "h": 132,
+          "ink": 0.278
+        },
         "text": "Set-up and grew the digital arm of one of London's most awarded design agencies with a new agency-model-friendly digital design and development process.",
-        "tags": [
-          {
-            "label": "2015-2019"
-          }
-        ]
+        "years": "2015–2019"
       },
       {
         "title": "Brand Cloudlines",
         "url": "",
         "icon": "images/ZxEzj0p3S4b1Meq2t1f1u6Q2V0.png",
+        "iconMeta": {
+          "w": 186,
+          "h": 116,
+          "ink": 0.732
+        },
         "text": "Developed ahead of market and backed by an initial investment of £250K, I led the scoping, design and build of a SaaS tool for creating and sharing digital brand guidelines. The product was built for one of London’s most awarded design agencies and remains white-labelled and in use today across multiple industries.",
-        "tags": [
-          {
-            "label": "0-1"
-          },
-          {
-            "label": "Self Initiated"
-          },
-          {
-            "label": "2014-2016"
-          }
-        ]
+        "years": "2014–2016"
       },
       {
         "title": "UK Parliament",
         "url": "",
         "icon": "images/Rx1XFbs65FRnoTFP8OY8Siya34Q.png",
+        "iconMeta": {
+          "w": 110,
+          "h": 126,
+          "ink": 0.504
+        },
         "text": "Designed a nationwide role-playing ‘boardgame’ named Election Toolkit in a box; teaching students aged 8-18 in 2,000+ schools how democracy works and why voting matters.",
-        "tags": [
-          {
-            "label": "2014"
-          }
-        ]
+        "years": "2014"
       },
       {
         "title": "Wall of Wally",
         "url": "https://wallofwally.jamingalea.com/",
         "icon": "images/DECyVBXzvnaOOHYneRduk35uETs.png",
+        "iconMeta": {
+          "w": 240,
+          "h": 106,
+          "ink": 0.222
+        },
         "text": "An illustrated tribute to the late branding expert Wally Olins. 200+ illustrators from around the world contributed their interpretation of Wally’s most iconic portrait photo which culminated in an exhibition of the work in Shoreditch, London.",
-        "tags": [
-          {
-            "label": "Self Initiated"
-          },
-          {
-            "label": "2014-2015"
-          }
-        ]
+        "years": "2014–2015"
       },
       {
         "title": "Design Studio Directory",
         "url": "https://designstudio.directory/",
         "icon": "images/hy0DnnrljWUgMoWlBpetxNk8RLI.png",
+        "iconMeta": {
+          "w": 110,
+          "h": 124,
+          "ink": 0.78
+        },
         "text": "A curated list of a 1000+ design studios organised by location helping graduates and others looking for creative studios from around the world. This project is now run by Studio Noel.",
-        "tags": [
-          {
-            "label": "Self Initiated"
-          },
-          {
-            "label": "2014-2024"
-          }
-        ]
+        "years": "2014–2024"
       }
     ]
   },

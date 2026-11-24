@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains, logoSize } from '/render.mjs';
 import { richText } from '/admin/editor.mjs';
 
 /* ---------- small helpers ---------- */
@@ -187,13 +187,22 @@ async function load({ keepDraft = true } = {}) {
   changed({ save: false });
 }
 
+const YEARS = /^\d{4}(\s*[-–]\s*\d{4})?$/;
+
 function normalise(c) {
   c.site ||= {}; c.intro ||= {}; c.projects ||= [];
   migrate(c);
   c.highlights ||= { title: 'Other highlights', items: [] }; c.highlights.items ||= [];
   c.footer ||= { title: 'More information', links: [] }; c.footer.links ||= [];
   for (const p of c.projects) { p.tags ||= []; p.column ||= 'left'; p.id ||= uniqueId(p.title, p); }
-  for (const i of c.highlights.items) i.tags ||= [];
+  for (const i of c.highlights.items) {
+    // Highlights used to carry tags; the years are kept as their own field, the rest dropped.
+    if (i.years == null) {
+      const y = (i.tags || []).map((t) => String(t?.label || '').trim()).find((l) => YEARS.test(l));
+      i.years = y ? y.replace(/\s*[-–]\s*/, '–') : '';
+    }
+    delete i.tags;
+  }
   for (const cs of c.caseStudies) { cs.meta ||= []; cs.blocks ||= []; cs.id ||= uniqueSlug(caseStudyTitle(c, cs), cs); }
 }
 
@@ -315,6 +324,63 @@ async function processImage(file, kind) {
   return { blob, ext: extOf(type), w, h: hgt };
 }
 
+// Highlight logos: trim the empty space around the logo and measure it (size, and how
+// much of it is filled in) so the site can size every logo to look about the same.
+async function measureLogo(file) {
+  const isSvg = file.type === 'image/svg+xml';
+  let src;
+  if (isSvg) {
+    const url = URL.createObjectURL(file);
+    src = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => fail(new Error('Could not read that SVG.')); i.src = url; });
+  } else {
+    src = await createImageBitmap(file);
+  }
+  const nw = src.naturalWidth || src.width || 200, nh = src.naturalHeight || src.height || 200;
+  const k = Math.min(1, 400 / Math.max(nw, nh)) * (isSvg && Math.max(nw, nh) < 200 ? 200 / Math.max(nw, nh) : 1);
+  const W = Math.max(1, Math.round(nw * k)), H = Math.max(1, Math.round(nh * k));
+  const cv = Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, W, H);
+  const px = ctx.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (px[(y * W + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) { x0 = 0; y0 = 0; x1 = W - 1; y1 = H - 1; } // fully transparent: leave as is
+  const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+  let filled = 0;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (px[(y * W + x) * 4 + 3] > 128) filled++;
+  const meta = { w: bw, h: bh, ink: Math.round((filled / (bw * bh)) * 1000) / 1000 };
+  if (isSvg) return { file, meta }; // keep vectors as they are
+  const out = Object.assign(document.createElement('canvas'), { width: bw, height: bh });
+  out.getContext('2d').drawImage(cv, x0, y0, bw, bh, 0, 0, bw, bh);
+  const blob = await new Promise((r) => out.toBlob(r, 'image/png'));
+  return { file: new File([blob], file.name.replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' }), meta };
+}
+
+// "Logo size" nudge for one highlight, with the logo shown as it appears on the site.
+function logoSizeField(it) {
+  const img = h('img', { src: assetUrl(it.icon), alt: '' });
+  const val = h('span.count');
+  const range = h('input', { type: 'range', min: 70, max: 130, step: 5, value: Math.round((it.iconScale || 1) * 100) });
+  const reset = h('button.btn.btn--sm.btn--ghost', { type: 'button' }, 'Reset');
+  const upd = () => {
+    const s = logoSize(it);
+    img.style.width = s ? `${s.w}px` : ''; img.style.height = s ? `${s.h}px` : '';
+    val.textContent = `${range.value}%`;
+    reset.hidden = +range.value === 100;
+  };
+  const set = (v) => { if (v === 100) delete it.iconScale; else it.iconScale = v / 100; upd(); changed(); };
+  range.addEventListener('input', () => set(+range.value));
+  reset.addEventListener('click', () => { range.value = 100; set(100); });
+  upd();
+  return h('div.logo-size',
+    h('span.logo-size__chip', h('span.logo-size__shape', img)),
+    h('label', h('span', 'Logo size', val), range,
+      h('small', it.iconMeta ? 'Nudge this logo if it still looks bigger or smaller than the others.' : 'Upload this logo again to size it automatically.')),
+    reset);
+}
+
 async function addImage(file, kind, nameHint) {
   const { blob, ext, w, h: hgt } = await processImage(file, kind);
   const rand = Math.random().toString(36).slice(2, 8);
@@ -422,6 +488,7 @@ function imageField(label, obj, key, kind, opts = {}) {
   const take = async (f) => {
     if (!f) return;
     try {
+      if (opts.prepare) f = await opts.prepare(f);
       const { path: p, w, h: hgt } = await addImage(f, kind, opts.nameHint?.() || label);
       obj[key] = p;
       if (opts.focusKey) delete obj[opts.focusKey];
@@ -1204,7 +1271,7 @@ const panels = {
     const hl = state.content.highlights;
     const list = hl.items;
     return [
-      h('p.intro', 'The scrolling row of smaller projects near the bottom of the page.'),
+      h('p.intro', 'The list of smaller projects near the bottom of the page.'),
       text('Section title', hl, 'title'),
       h('h3.group', 'Items'),
       h('div.list', list.map((it, i) => card(it, {
@@ -1216,12 +1283,19 @@ const panels = {
         body: () => [
           text('Title', it, 'title'),
           text('Link', it, 'url', { type: 'url', placeholder: 'https://… (optional)' }),
-          imageField('Logo / icon', it, 'icon', 'icon', { contain: true, hint: 'White on transparent works best. Shown 50px tall.', nameHint: () => it.title, onChange: renderPanel }),
+          imageField('Logo', it, 'icon', 'icon', {
+            contain: true,
+            hint: 'White on transparent works best. Empty space around it is trimmed, and it is sized to look as big as the others.',
+            nameHint: () => it.title,
+            prepare: async (f) => { const r = await measureLogo(f); it.iconMeta = r.meta; delete it.iconScale; return r.file; },
+            onChange: () => { if (!it.icon) { delete it.iconMeta; delete it.iconScale; } renderPanel(); },
+          }),
+          it.icon && logoSizeField(it),
+          text('Years', it, 'years', { placeholder: 'e.g. 2014–2016' }),
           area('Description', it, 'text', { rows: 5 }),
-          tagsField(it.tags),
         ],
       }))),
-      h('button.btn.add', { type: 'button', onclick: () => { const it = { title: 'New highlight', url: '', icon: '', text: '', tags: [] }; list.push(it); state.open.add(it); changed(); renderPanel(); } }, '+ Add highlight'),
+      h('button.btn.add', { type: 'button', onclick: () => { const it = { title: 'New highlight', url: '', icon: '', years: '', text: '' }; list.push(it); state.open.add(it); changed(); renderPanel(); } }, '+ Add highlight'),
     ];
   },
 

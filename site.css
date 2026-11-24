@@ -27,8 +27,8 @@
   --lh-small:24px;
 }
 *,*::before,*::after{box-sizing:border-box}
-/* Page width: sections stop growing at --page-max and sit centred (the highlights row is left full width) */
-.hero,.work,.footer,.cs-nav,.cs main{max-width:var(--page-max);margin-left:auto;margin-right:auto}
+/* Page width: sections stop growing at --page-max and sit centred */
+.hero,.work,.highlights,.footer,.cs-nav,.cs main{max-width:var(--page-max);margin-left:auto;margin-right:auto}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:300 var(--fs)/var(--lh) Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 h1,h2,h3,p,ul{margin:0;padding:0;font:inherit}
@@ -42,7 +42,7 @@ a:hover{opacity:.7}
 
 /* Hero: the intro, filling the first screen; it scrolls away with the page */
 /* Layout grid: 12 columns. Projects: left 1–7, gap 8, right 9–12. Intro and footer use the same columns. */
-.hero,.work,.footer{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
+.hero,.work,.highlights,.footer{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
 .hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0}
 .hero__intro{grid-column:1 / span 6;max-width:591px}
 .hero__name{line-height:22px;margin-bottom:4px}
@@ -65,29 +65,31 @@ a.project__media:hover img{transform:scale(1.02)}
 .project__body{padding-top:40px}
 .work__col--left .project__body{max-width:490px}
 .project__title{margin-bottom:12px}
-.project__text,.highlight__text{color:var(--muted)}
+.project__text{color:var(--muted)}
 .project__text p+p{margin-top:13px}
-.project__text a,.highlight__text a,.hero__tagline a{color:var(--fg)}
+.project__text a,.hero__tagline a{color:var(--fg)}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 .tag{position:relative;font-size:var(--fs-small);line-height:26px;padding:4px 10px;border-radius:10px;color:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .tag--highlight{color:#4f9b30;box-shadow:inset 0 0 0 1px var(--green);color:var(--green);filter:brightness(1.55)}
 
-/* Other highlights: an endless ticker (site.js duplicates the items) */
-.highlights{padding-top:120px}
+/* Other highlights: a list as wide as the left column of projects (columns 1–7),
+   with its own 7 columns: logo, name and years on the left, description on the right */
+.highlights{padding:120px var(--gutter) 0}
 .section-title{color:var(--muted);line-height:22px}
-.highlights .section-title{padding:0 var(--gutter);margin-bottom:40px}
-.ticker{overflow-x:auto;scrollbar-width:none}
-.ticker::-webkit-scrollbar{display:none}
-.ticker__track{display:flex;gap:40px;padding:0 var(--gutter);width:max-content}
-.ticker.is-running{overflow:hidden}
-.ticker.is-running .ticker__track{padding-right:0;animation:ticker calc(var(--count) * 9s) linear infinite}
-.ticker.is-running:hover .ticker__track{animation-play-state:paused}
-@keyframes ticker{to{transform:translateX(calc(-50% - 20px))}}
-.highlight{width:340px;flex:none;font-size:var(--fs-small);line-height:var(--lh-small)}
-.highlight__icon{height:50px;width:auto;margin-bottom:40px}
-.highlight__title{margin-bottom:12px}
-.highlight .tags{margin-top:12px}
+.highlights .section-title{grid-column:1 / -1;margin-bottom:32px}
+.hl-list{grid-column:1 / span 7;list-style:none;margin:0;padding:0}
+.hl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:var(--grid-gap);padding:28px 0;border-top:1px solid rgba(255,255,255,.1)}
+.hl:last-child{border-bottom:1px solid rgba(255,255,255,.1)}
+.hl__name{grid-column:1 / span 3;display:flex;gap:16px;align-items:flex-start;min-width:0}
+.hl__logo{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.07)}
+.hl__logo img{display:block;max-width:22px;max-height:18px;object-fit:contain} /* until a logo is measured */
+.hl__logo img[style]{max-width:none;max-height:none}
+.hl__title{padding-top:7px;font-weight:inherit}
+.hl__years{margin-top:4px;color:var(--muted);font-size:14px;line-height:20px}
+.hl__text{grid-column:4 / span 4;padding-top:8px;color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-small)}
+.hl__text p+p{margin-top:12px}
+.hl__text a{color:var(--fg)}
 
 .footer{padding:200px var(--gutter)}
 .footer .section-title{grid-column:1 / span 8}
@@ -128,7 +130,9 @@ a.project__media:hover img{transform:scale(1.02)}
   .work__col--left .project__body{max-width:none}
   .work__col--right{margin-top:120px;display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));gap:80px var(--grid-gap)}
   .work__col--right>.project{grid-column:span 4} /* two squares side by side, 4 of 8 columns each */
-  .highlights{padding-top:120px}
+  .hl-list{grid-column:1 / -1}
+  .hl{grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr))}
+  .hl__text{grid-column:4 / -1}
   .footer{display:flex;flex-direction:column;gap:12px;padding:80px var(--gutter)}
 }
 
@@ -142,7 +146,10 @@ a.project__media:hover img{transform:scale(1.02)}
   .project__body{padding:20px var(--gutter) 0}
   .project__text p+p{margin-top:12px}
   .highlights{padding-top:80px}
-  .highlights .section-title{margin-bottom:30px}
+  .highlights .section-title{margin-bottom:24px}
+  .hl{padding:24px 0}
+  .hl__name{grid-column:1 / -1}
+  .hl__text{grid-column:1 / -1;padding-top:16px}
   .footer{padding:80px var(--gutter)}
 }
 
@@ -204,6 +211,4 @@ a.project__media:hover img{transform:scale(1.02)}
 
 @media (prefers-reduced-motion:reduce){
   .js .reveal,.js .project.reveal>*{opacity:1;transform:none;transition:none}
-  .ticker.is-running .ticker__track{animation:none}
-  .ticker.is-running{overflow-x:auto}
 }
