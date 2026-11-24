@@ -105,9 +105,9 @@ a.project__media:hover img{transform:scale(1.02)}
 /* Tablet */
 @media (max-width:1199px){
   :root{--gutter:48px}
-  .hero{display:flex;flex-direction:column;justify-content:flex-start;padding-top:200px;gap:40px}
+  .hero{display:flex;flex-direction:column;justify-content:flex-start;min-height:0;padding-top:200px;gap:40px} /* no longer fills the screen, so the gap below stays even */
   .hero__intro,.hero__bio{width:100%;max-width:730px}
-  .work{display:block;padding-top:120px}
+  .work{display:block;padding-top:100px}
   .work__col--left .project__body{max-width:none}
   .work__col--right{margin-top:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px 40px}
   .highlights{padding-top:120px}
@@ -119,7 +119,7 @@ a.project__media:hover img{transform:scale(1.02)}
   :root{--gutter:24px;--fs:16px;--lh:24px}
   .hero{padding-top:160px}
   .hero__name{line-height:19px}
-  .work{padding:100px 0 0}
+  .work{padding:64px 0 0}
   .work__col--right{display:flex;margin-top:120px}
   .project__body{padding:20px var(--gutter) 0}
   .project__text p+p{margin-top:12px}
