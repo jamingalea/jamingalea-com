@@ -283,7 +283,7 @@ export function logoSize(h) {
   const fit = Math.min(1, 26 / w, 24 / hgt);
   const nudge = Math.min(Math.max(+h.iconScale || 1, 0.5), 1.5);
   w *= fit * nudge; hgt *= fit * nudge;
-  const cap = Math.min(1, 34 / w, 34 / hgt); // stay inside the 40px shape
+  const cap = Math.min(1, 34 / w, 34 / hgt); // stay well inside the square
   return { w: +(w * cap).toFixed(1), h: +(hgt * cap).toFixed(1) };
 }
 

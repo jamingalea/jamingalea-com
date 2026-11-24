@@ -79,15 +79,15 @@ a.project__media:hover img{transform:scale(1.02)}
 .section-title{color:var(--muted);line-height:22px}
 .highlights .section-title{grid-column:1 / -1;margin-bottom:32px}
 .hl-list{grid-column:1 / span 7;list-style:none;margin:0;padding:0}
-.hl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:var(--grid-gap);padding:28px 0;border-top:1px solid rgba(255,255,255,.1)}
+.hl{--hl-logo:calc(var(--lh) + 22px);display:grid;grid-template-columns:repeat(7,minmax(0,1fr));column-gap:var(--grid-gap);padding:28px 0;border-top:1px solid rgba(255,255,255,.1)}
 .hl:last-child{border-bottom:1px solid rgba(255,255,255,.1)}
 .hl__name{grid-column:1 / span 3;display:flex;gap:16px;align-items:flex-start;min-width:0}
-.hl__logo{flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.07)}
+.hl__logo{flex:none;display:flex;align-items:center;justify-content:center;width:var(--hl-logo);height:var(--hl-logo);border-radius:12px;background:rgba(255,255,255,.07)}
 .hl__logo img{display:block;max-width:22px;max-height:18px;object-fit:contain} /* until a logo is measured */
 .hl__logo img[style]{max-width:none;max-height:none}
-.hl__title{padding-top:7px;font-weight:inherit}
-.hl__years{margin-top:4px;color:var(--muted);font-size:14px;line-height:20px}
-.hl__text{grid-column:4 / span 4;padding-top:8px;color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-small)}
+.hl__title{font-weight:inherit}
+.hl__years{margin-top:2px;color:var(--muted);font-size:14px;line-height:20px}
+.hl__text{grid-column:4 / span 4;padding-top:1px;color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-small)}
 .hl__text p+p{margin-top:12px}
 .hl__text a{color:var(--fg)}
 
