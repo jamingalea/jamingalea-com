@@ -99,14 +99,15 @@ a.project__media:hover img{transform:scale(1.02)}
    3: the About text, then the projects, load in the same way, each starting a little lower
       and a little later, so on stacked layouts they follow the intro up rather than meet it. */
 .intro-seq .hero__intro{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 16px))}
-.intro-seq .hero__bio{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
+.intro-seq .hero__bio p{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
+.hero__bio p:nth-child(2){--p:.1s}.hero__bio p:nth-child(3){--p:.2s}.hero__bio p:nth-child(4){--p:.3s}.hero__bio p:nth-child(5){--p:.4s}.hero__bio p:nth-child(n+6){--p:.5s}
 .intro-seq .work{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 64px))}
 .intro-seq .highlights,.intro-seq .footer{opacity:0}
 .intro-seq.intro-in .hero__intro{opacity:1;transform:translateY(var(--intro-shift,0px));transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.7,.2,1)}
 .intro-seq.intro-done .hero__intro{opacity:1;transform:none;transition:opacity .4s ease,transform 1.1s cubic-bezier(.65,0,.35,1)}
-.intro-seq.intro-done .hero__bio{opacity:1;transform:none;transition:opacity .9s ease .15s,transform 1.1s cubic-bezier(.45,0,.2,1) .12s}
-.intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .45s,transform 1.2s cubic-bezier(.45,0,.2,1) .35s}
-.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer{opacity:1;transition:opacity .9s ease .6s}
+.intro-seq.intro-done .hero__bio p{opacity:1;transform:none;transition:opacity .9s ease calc(.15s + var(--p,0s)),transform 1.1s cubic-bezier(.45,0,.2,1) calc(.12s + var(--p,0s))}
+.intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .6s,transform 1.2s cubic-bezier(.45,0,.2,1) .5s}
+.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer{opacity:1;transition:opacity .9s ease .75s}
 
 /* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
    enter together appear one after another. */
