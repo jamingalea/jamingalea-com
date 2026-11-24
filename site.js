@@ -156,4 +156,47 @@
     });
     ticker.classList.add('is-running');
   }
+
+  // Hidden: press G to show or hide the 12-column layout grid. Ignored while
+  // typing, and with Cmd/Ctrl/Alt. Stays on between pages for the visit.
+  var gridOverlay = null, gridLabel = null;
+  var describeGrid = function () {
+    var cols = gridOverlay.querySelectorAll('.grid-overlay__col');
+    var css = getComputedStyle(gridOverlay.firstChild);
+    gridLabel.textContent = '12 columns · ' + Math.round(cols[0].getBoundingClientRect().width) + 'px wide · ' +
+      parseFloat(css.columnGap) + 'px gaps · ' + parseFloat(css.paddingLeft) + 'px margins  (G to hide)';
+  };
+  var showGrid = function (on) {
+    if (on && !gridOverlay) {
+      gridOverlay = document.createElement('div');
+      gridOverlay.className = 'grid-overlay';
+      gridOverlay.setAttribute('aria-hidden', 'true');
+      var inner = document.createElement('div');
+      inner.className = 'grid-overlay__inner';
+      for (var c = 0; c < 12; c++) {
+        var col = document.createElement('span');
+        col.className = 'grid-overlay__col';
+        inner.appendChild(col);
+      }
+      gridLabel = document.createElement('span');
+      gridLabel.className = 'grid-overlay__label';
+      gridOverlay.appendChild(inner);
+      gridOverlay.appendChild(gridLabel);
+      document.body.appendChild(gridOverlay);
+      window.addEventListener('resize', function () { if (gridOverlay.classList.contains('is-on')) describeGrid(); });
+    }
+    if (gridOverlay) {
+      gridOverlay.classList.toggle('is-on', on);
+      if (on) describeGrid();
+    }
+    try { sessionStorage.setItem('show-grid', on ? '1' : ''); } catch (e) { /* private mode */ }
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'g' && e.key !== 'G') return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.isContentEditable || /^(input|textarea|select)$/i.test(t.tagName))) return;
+    showGrid(!(gridOverlay && gridOverlay.classList.contains('is-on')));
+  });
+  try { if (sessionStorage.getItem('show-grid') === '1') showGrid(true); } catch (e) { /* private mode */ }
 })();

@@ -190,6 +190,13 @@ a.project__media:hover img{transform:scale(1.02)}
   .cs-next{margin-top:120px}
 }
 
+/* Hidden layout grid (press G; site.js). Matches the page width, margins and 12 columns. */
+.grid-overlay{position:fixed;inset:0;z-index:2147483000;pointer-events:none;display:none}
+.grid-overlay.is-on{display:block}
+.grid-overlay__inner{height:100%;max-width:var(--page-max);margin:0 auto;padding:0 var(--gutter);display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--grid-gap)}
+.grid-overlay__col{background:rgba(255,77,77,.07);box-shadow:inset 1px 0 rgba(255,77,77,.35),inset -1px 0 rgba(255,77,77,.35)}
+.grid-overlay__label{position:fixed;left:12px;bottom:12px;padding:6px 9px;border-radius:6px;background:rgba(0,0,0,.72);color:#ff7a7a;font:12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre}
+
 @media (prefers-reduced-motion:reduce){
   .js .reveal,.js .project.reveal>*{opacity:1;transform:none;transition:none}
   .ticker.is-running .ticker__track{animation:none}
