@@ -1195,7 +1195,7 @@ const panels = {
     return [
       h('p.intro', 'The text at the top of the page.'),
       text('Name', i, 'name'),
-      area('Introduction', i, 'tagline', { rows: 4, hint: 'Shown under your name.' }),
+      area('Introduction', i, 'tagline', { rows: 4, hint: 'Shown under your name. Enter starts a new paragraph.' }),
       area('About', i, 'bio', { rows: 10, hint: 'Shown on the right. Enter starts a new paragraph.' }),
     ];
   },
