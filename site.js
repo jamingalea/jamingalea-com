@@ -2,16 +2,32 @@
   var root = document.documentElement;
   var sequencing = function () { return root.classList.contains('intro-seq'); };
 
-  // Homepage load sequence (switched on by a script in <head>): the intro fades in
-  // centred on screen, pauses, then glides to its place as the rest of the page
-  // fades in. Scrolling, a key or a tap skips straight to the end.
+  // Wide screens (intro and About side by side): the intro's home is the vertical
+  // centre of the first screen, worked out from its real height.
   var intro = document.querySelector('.hero__intro');
+  var hero = document.querySelector('.hero');
+  var sideBySide = window.matchMedia('(min-width: 1200px)');
+  var centreIntro = function () {
+    if (!intro || !hero) return;
+    hero.style.paddingTop = sideBySide.matches
+      ? Math.max(0, Math.round(window.innerHeight / 2 - intro.offsetHeight / 2)) + 'px'
+      : '';
+  };
+  centreIntro();
+  window.addEventListener('resize', centreIntro);
+  if (document.fonts) document.fonts.ready.then(centreIntro);
+
+  // Homepage load sequence (switched on by a script in <head>): the intro fades in
+  // centred on screen and pauses; then the About text and the projects load in the
+  // same way, one after another. Where the intro stacks above the About text
+  // (tablets, phones) it starts in the middle of the screen and glides up, with the
+  // About text and projects following it. Scrolling, a key or a tap skips to the end.
   if (intro && sequencing()) {
-    var FADE_IN = 900, HOLD = 1000, SETTLE = 1700, timers = [], finished = false;
+    var FADE_IN = 900, HOLD = 1000, SETTLE = 2000, timers = [], finished = false;
     var skipEvents = ['scroll', 'wheel', 'touchstart', 'keydown', 'mousedown'];
     var cleanUp = function () {
       root.classList.remove('intro-seq', 'intro-in', 'intro-done');
-      intro.style.removeProperty('--intro-shift');
+      root.style.removeProperty('--intro-shift');
       window.dispatchEvent(new Event('resize')); // let the scroll fade measure the final layout
     };
     var finish = function () {
@@ -25,11 +41,16 @@
     var begin = function () {
       if (finished) return;
       if (window.scrollY > 40) { finish(); return; } // arrived part-way down the page
-      // Centre the intro on screen (ignoring the small offset it starts with).
-      var r = intro.getBoundingClientRect();
-      var offset = new DOMMatrixReadOnly(getComputedStyle(intro).transform).m42;
-      var shift = Math.round(window.innerHeight / 2 - (r.top - offset + r.height / 2));
-      intro.style.setProperty('--intro-shift', shift + 'px');
+      // Side by side, the intro is already centred (no glide). Stacked, start it in
+      // the middle of the screen; the About text and projects start the same distance down.
+      centreIntro();
+      var shift = 0;
+      if (!sideBySide.matches) {
+        var r = intro.getBoundingClientRect();
+        var offset = new DOMMatrixReadOnly(getComputedStyle(intro).transform).m42;
+        shift = Math.max(0, Math.round(window.innerHeight / 2 - (r.top - offset + r.height / 2)));
+      }
+      root.style.setProperty('--intro-shift', shift + 'px');
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
           root.classList.add('intro-in');

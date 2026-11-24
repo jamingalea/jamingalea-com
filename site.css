@@ -92,14 +92,20 @@ a.project__media:hover img{transform:scale(1.02)}
 .footer .section-title{grid-column:1 / span 8}
 .footer__links{grid-column:9 / span 4}
 
-/* Homepage load sequence (site.js). 1: the intro fades in, centred on screen (--intro-shift).
-   2: a short pause. 3: the intro glides to its place while the About text and the rest fade in. */
+/* Homepage load sequence (site.js).
+   1: the intro fades in and rises into place; where it stacks (tablet, phone) it starts
+      in the middle of the screen (--intro-shift). 2: a short pause.
+   3: the About text, then the projects, load in the same way, each starting a little lower
+      and a little later, so on stacked layouts they follow the intro up rather than meet it. */
 .intro-seq .hero__intro{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 16px))}
-.intro-seq .hero__bio,.intro-seq .work,.intro-seq .highlights,.intro-seq .footer{opacity:0}
+.intro-seq .hero__bio{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
+.intro-seq .work{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 64px))}
+.intro-seq .highlights,.intro-seq .footer{opacity:0}
 .intro-seq.intro-in .hero__intro{opacity:1;transform:translateY(var(--intro-shift,0px));transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.7,.2,1)}
-.intro-seq.intro-done .hero__intro{opacity:1;transform:none;transition:opacity .4s ease,transform 1s cubic-bezier(.65,0,.35,1)}
-.intro-seq.intro-done .hero__bio{opacity:1;transition:opacity 1s ease .3s}
-.intro-seq.intro-done .work,.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer{opacity:1;transition:opacity 1s ease .6s}
+.intro-seq.intro-done .hero__intro{opacity:1;transform:none;transition:opacity .4s ease,transform 1.1s cubic-bezier(.65,0,.35,1)}
+.intro-seq.intro-done .hero__bio{opacity:1;transform:none;transition:opacity .9s ease .15s,transform 1.1s cubic-bezier(.45,0,.2,1) .12s}
+.intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .45s,transform 1.2s cubic-bezier(.45,0,.2,1) .35s}
+.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer{opacity:1;transition:opacity .9s ease .6s}
 
 /* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
    enter together appear one after another. */
