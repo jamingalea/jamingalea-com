@@ -1,4 +1,48 @@
 (function () {
+  var root = document.documentElement;
+  var sequencing = function () { return root.classList.contains('intro-seq'); };
+
+  // Homepage load sequence (switched on by a script in <head>): the intro fades in
+  // centred on screen, pauses, then glides to its place as the rest of the page
+  // fades in. Scrolling, a key or a tap skips straight to the end.
+  var intro = document.querySelector('.hero__intro');
+  if (intro && sequencing()) {
+    var FADE_IN = 900, HOLD = 1000, SETTLE = 1700, timers = [], finished = false;
+    var skipEvents = ['scroll', 'wheel', 'touchstart', 'keydown', 'mousedown'];
+    var cleanUp = function () {
+      root.classList.remove('intro-seq', 'intro-in', 'intro-done');
+      intro.style.removeProperty('--intro-shift');
+      window.dispatchEvent(new Event('resize')); // let the scroll fade measure the final layout
+    };
+    var finish = function () {
+      if (finished) return;
+      finished = true;
+      timers.forEach(clearTimeout);
+      skipEvents.forEach(function (t) { window.removeEventListener(t, finish, true); });
+      root.classList.add('intro-in', 'intro-done');
+      setTimeout(cleanUp, SETTLE);
+    };
+    var begin = function () {
+      if (finished) return;
+      if (window.scrollY > 40) { finish(); return; } // arrived part-way down the page
+      // Centre the intro on screen (ignoring the small offset it starts with).
+      var r = intro.getBoundingClientRect();
+      var offset = new DOMMatrixReadOnly(getComputedStyle(intro).transform).m42;
+      var shift = Math.round(window.innerHeight / 2 - (r.top - offset + r.height / 2));
+      intro.style.setProperty('--intro-shift', shift + 'px');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          root.classList.add('intro-in');
+          timers.push(setTimeout(finish, FADE_IN + HOLD));
+        });
+      });
+    };
+    skipEvents.forEach(function (t) { window.addEventListener(t, finish, { capture: true, passive: true }); });
+    // Wait briefly for the web font so the intro is measured at its real size.
+    var fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+    Promise.race([fontsReady, new Promise(function (r) { setTimeout(r, 500); })]).then(begin);
+  }
+
   // The intro text fades out as it scrolls up the screen, linked to the scroll.
   // Each piece (name, introduction, each About paragraph) fades by its own
   // position, so text further down stays readable until it gets there too.
@@ -9,6 +53,7 @@
     var fadeFrom = [], fTick = false;
     var fade = function () {
       fTick = false;
+      if (sequencing()) return; // the load sequence is still placing the intro
       fadeEls.forEach(function (el, i) {
         var r = el.getBoundingClientRect();
         var end = -r.height / 2;
@@ -18,6 +63,7 @@
       });
     };
     var measureFade = function () {
+      if (sequencing()) return; // measured again once the load sequence ends
       var vh = window.innerHeight;
       fadeEls.forEach(function (el, i) {
         var docTop = el.getBoundingClientRect().top + window.scrollY;
