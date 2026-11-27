@@ -338,7 +338,14 @@ ${footer(c)}`;
    Media is an image, a video, or a code snippet that runs in a sealed-off frame
    (sandbox, scripts only), so it can't affect the page or reach the rest of the site. */
 // Floating projects that appear on the homepage: not hidden, and with something to show.
-const floaterHasContent = (f) => !!(f.title || (f.media?.type === 'code' ? String(f.media.code || '').trim() : f.media?.src));
+const floaterHasContent = (f) => !!(f.title || (f.media?.type === 'code' ? String(f.media.code || '').trim() : f.media?.type === 'embed' ? f.media.url : f.media?.src));
+
+// A code snippet that is only an <iframe src="https://…"> is treated as an embedded page,
+// since a page embedded inside the sealed-off code frame couldn't load its own files.
+export function iframeSrc(code) {
+  const m = /^\s*<iframe\b[^>]*\bsrc\s*=\s*["'](https:\/\/[^"']+)["'][^>]*>\s*<\/iframe>\s*$/i.exec(String(code || ''));
+  return m ? m[1].replace(/&amp;/g, '&') : '';
+}
 export const liveFloaters = (c) => (c.floating || []).filter((f) => !f.hidden && floaterHasContent(f));
 
 export const FLOAT_RATIOS = { landscape: '4 / 3', square: '1 / 1', portrait: '3 / 4', wide: '16 / 9' };
@@ -348,13 +355,19 @@ const floaterCodeDoc = (code) => `<!doctype html><html><head><meta charset="utf-
 function floater(f, asset, i) {
   const m = f.media || {};
   const label = f.title || 'Side project';
-  const isCode = m.type === 'code';
+  const embedUrl = m.type === 'embed' ? m.url : m.type === 'code' ? iframeSrc(m.code) : '';
+  const isCode = m.type === 'code' || m.type === 'embed';
+  const ratio = FLOAT_RATIOS[m.ratio] || FLOAT_RATIOS.landscape;
   let media = '';
-  if (m.type === 'video' && m.src) {
+  if (embedUrl && /^https:\/\//.test(embedUrl)) {
+    // Another website, embedded directly. It keeps its own origin, so it can load its own files,
+    // but it can't reach this page (different origin) or navigate it.
+    media = `<iframe class="floater__media floater__media--code" style="aspect-ratio:${ratio}" src="${esc(embedUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="fullscreen; xr-spatial-tracking" referrerpolicy="strict-origin-when-cross-origin" title="${esc(label)}" loading="lazy"></iframe>`;
+  } else if (m.type === 'video' && m.src) {
     media = `<video class="floater__media" src="${esc(asset(m.src))}" autoplay muted loop playsinline preload="metadata" aria-label="${esc(m.alt || label)}"></video>`;
-  } else if (isCode && String(m.code || '').trim()) {
-    media = `<iframe class="floater__media floater__media--code" style="aspect-ratio:${FLOAT_RATIOS[m.ratio] || FLOAT_RATIOS.landscape}" sandbox="allow-scripts" srcdoc="${esc(floaterCodeDoc(m.code))}" title="${esc(label)}" loading="lazy"></iframe>`;
-  } else if (m.type !== 'video' && !isCode && m.src) {
+  } else if (m.type === 'code' && String(m.code || '').trim()) {
+    media = `<iframe class="floater__media floater__media--code" style="aspect-ratio:${ratio}" sandbox="allow-scripts" srcdoc="${esc(floaterCodeDoc(m.code))}" title="${esc(label)}" loading="lazy"></iframe>`;
+  } else if (m.type === 'image' && m.src) {
     media = `<img class="floater__media" src="${esc(asset(m.src))}" alt="${esc(m.alt || '')}" loading="lazy" decoding="async">`;
   }
   const title = f.title ? `<p class="floater__title">${esc(f.title)}${f.url ? ARROW : ''}</p>` : '';

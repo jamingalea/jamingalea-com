@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains, iframeSrc } from '/render.mjs';
 import { richText } from '/admin/editor.mjs';
 
 /* ---------- small helpers ---------- */
@@ -402,7 +402,7 @@ function area(label, obj, key, opts = {}) {
   const ta = h('textarea', { rows: opts.rows || 6, placeholder: opts.placeholder }); ta.value = obj[key] ?? '';
   const count = opts.limit ? h('span.count') : null;
   const upd = () => { if (count) { const n = ta.value.length; count.textContent = `${n} / ${opts.limit}`; count.classList.toggle('over', n > opts.limit); } };
-  bind(obj, key, ta, { onInput: upd }); upd();
+  bind(obj, key, ta, { onInput: (v) => { upd(); opts.onInput?.(v); } }); upd();
   return h('label', h('span', label, count), ta,
     h('small', opts.hint ?? 'Leave a blank line between paragraphs. Add a link with [link text](https://…).'));
 }
@@ -1139,7 +1139,7 @@ function visitorCardSection(p) {
 }
 
 /* ---------- panels ---------- */
-const FLOAT_TYPES = [['image', 'Image'], ['video', 'Video'], ['code', 'Code snippet']];
+const FLOAT_TYPES = [['image', 'Image'], ['video', 'Video'], ['embed', 'Web page'], ['code', 'Code snippet']];
 
 function videoField(m, nameHint) {
   const file = h('input', { type: 'file', accept: 'video/mp4,video/webm,video/quicktime', hidden: true });
@@ -1171,8 +1171,20 @@ function floatingFields(f) {
   const m = f.media;
   const name = () => f.title || 'floating';
   const media = m.type === 'video' ? [videoField(m, name), text('Description', m, 'alt', { hint: 'Describes the video for screen readers.' })]
+    : m.type === 'embed' ? [
+      text('Page address', m, 'url', { type: 'url', placeholder: 'https://…', hint: 'A page made to be embedded, such as a 3D model or an interactive graphic. It loads directly, so it works with its own files and libraries. Keep its background transparent so the glass shows through.' }),
+      select('Shape', m, 'ratio', [['landscape', 'Landscape (4:3)'], ['square', 'Square'], ['portrait', 'Portrait (3:4)'], ['wide', 'Wide (16:9)']]),
+    ]
     : m.type === 'code' ? [
-      area('Code', m, 'code', { plain: true, rows: 12, placeholder: '<canvas id="c"></canvas>\n<script>\n  // your graphic\n</script>', hint: 'HTML, CSS and JavaScript. It runs in its own sealed-off frame, so it can’t affect the rest of the page. Scripts can load libraries from a CDN (for example three.js). Keep the background transparent so the glass shows through.' }),
+      area('Code', m, 'code', { plain: true, rows: 12, onInput: (v) => {
+        // A pasted <iframe> embed becomes a Web page, which can load the embedded site's own files.
+        const src = iframeSrc(v);
+        if (!src) return;
+        const t = (/\btitle\s*=\s*["']([^"']*)["']/i.exec(v) || [])[1];
+        f.media = { type: 'embed', url: src, ratio: m.ratio || 'landscape' };
+        if (!f.title && t) f.title = t;
+        changed(); renderPanel(); toast('That’s an embedded page, so it’s set up as a Web page.');
+      }, placeholder: '<canvas id="c"></canvas>\n<script>\n  // your graphic\n</script>', hint: 'HTML, CSS and JavaScript. It runs in its own sealed-off frame, so it can’t affect the rest of the page. To show another website (an <iframe> embed), use Web page instead: pasting an <iframe> here switches to it. Scripts can load libraries from a CDN (for example three.js). Keep the background transparent so the glass shows through.' }),
       select('Shape', m, 'ratio', [['landscape', 'Landscape (4:3)'], ['square', 'Square'], ['portrait', 'Portrait (3:4)'], ['wide', 'Wide (16:9)']]),
     ]
     : [imageField('Image', m, 'src', 'floating', { onChange: renderPanel, nameHint: name }), text('Image description', m, 'alt', { hint: 'For screen readers. Leave empty if it’s purely decorative.' })];

@@ -205,5 +205,17 @@
       }
     ]
   },
-  "caseStudies": []
+  "caseStudies": [],
+  "floating": [
+    {
+      "title": "MODU Big Rocker",
+      "url": "https://modu.jamingalea.com/",
+      "media": {
+        "type": "embed",
+        "url": "https://modu.jamingalea.com/?embed=big-rocker&colour=orange",
+        "ratio": "landscape"
+      },
+      "position": "auto"
+    }
+  ]
 }
