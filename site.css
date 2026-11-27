@@ -111,6 +111,11 @@ a.project__media:hover img{transform:scale(1.02)}
   .work__col--left{grid-column:1 / span 12}
   .work__col--right,.hero__bio,.footer__links{grid-column:19 / span 6}
 }
+/* Past 1920px the images no longer reach the screen edge, so the text under the left-hand
+   images lines up with the image's left edge instead of the grid margin */
+@media (min-width:1921px){
+  .work__col--left .project__body{margin-left:calc(-1 * var(--gutter))}
+}
 
 /* Homepage load sequence (site.js).
    1: the intro fades in and rises into place; where it stacks (tablet, phone) it starts
