@@ -163,11 +163,26 @@ export function visitorCards(c) {
     };
     for (const d of cardDomains(p)) cards[d] = card;
   }
+  // Floating projects can have a visitor card too (a project's card wins if both claim a domain).
+  const live = liveFloaters(c);
+  for (const f of c.floating || []) {
+    if (!cardOn(f)) continue;
+    const domains = cardDomains(f);
+    const i = live.indexOf(f);
+    const card = {
+      project: f.title || domains[0] || '',
+      heading: f.visitorCard.heading || '',
+      html: paragraphs(f.visitorCard.message),
+      caseStudy: '',
+      portfolio: i < 0 ? '/' : `/#float-${i + 1}`,
+    };
+    for (const d of domains) if (!cards[d]) cards[d] = card;
+  }
   return { version: 1, by: name, portfolioHosts: portfolioHost ? [portfolioHost] : [], cards };
 }
 
 const setCardHosts = (c) => {
-  cardHosts = new Set((c.projects || []).filter(cardOn).flatMap(cardDomains));
+  cardHosts = new Set([...(c.projects || []), ...(c.floating || [])].filter(cardOn).flatMap(cardDomains));
 };
 
 /* ---------- shared pieces ---------- */
@@ -293,6 +308,7 @@ export function renderSite(c, opts = {}) {
   const hl = c.highlights || {};
   const hlItems = (hl.items || []).filter((h) => !h.hidden);
   const intro = c.intro || {};
+  const floats = liveFloaters(c).map((f, i) => floater(f, asset, i));
 
   return `${head(c, { path: '/', title: site.title, description: site.description, ogTitle: site.ogTitle, ogDescription: site.ogDescription, introSequence: true }, opts)}
 <body>
@@ -308,12 +324,50 @@ export function renderSite(c, opts = {}) {
     <div class="work__col work__col--left">${left.map((p) => project(p, asset, c)).join('')}</div>
     <div class="work__col work__col--right">${right.map((p) => project(p, asset, c)).join('')}</div>
   </section>
+  ${floats.length ? `<div class="floaters" aria-label="Side projects">${floats.join('')}</div>` : ''}
   ${hlItems.length ? `<section class="highlights reveal" aria-label="${esc(hl.title || 'Highlights')}">
     <h2 class="section-title">${esc(hl.title)}</h2>
     <div class="ticker"><ul class="ticker__track" style="--count:${hlItems.length}">${hlItems.map((h) => highlight(h, asset)).join('')}</ul></div>
   </section>` : ''}
 </main>
 ${footer(c)}`;
+}
+
+/* ---------- floating projects ----------
+   Small side projects shown as glass cards over the homepage (site.js places them).
+   Media is an image, a video, or a code snippet that runs in a sealed-off frame
+   (sandbox, scripts only), so it can't affect the page or reach the rest of the site. */
+// Floating projects that appear on the homepage: not hidden, and with something to show.
+const floaterHasContent = (f) => !!(f.title || (f.media?.type === 'code' ? String(f.media.code || '').trim() : f.media?.src));
+export const liveFloaters = (c) => (c.floating || []).filter((f) => !f.hidden && floaterHasContent(f));
+
+export const FLOAT_RATIOS = { landscape: '4 / 3', square: '1 / 1', portrait: '3 / 4', wide: '16 / 9' };
+
+const floaterCodeDoc = (code) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}</style></head><body>${code}</body></html>`;
+
+function floater(f, asset, i) {
+  const m = f.media || {};
+  const label = f.title || 'Side project';
+  const isCode = m.type === 'code';
+  let media = '';
+  if (m.type === 'video' && m.src) {
+    media = `<video class="floater__media" src="${esc(asset(m.src))}" autoplay muted loop playsinline preload="metadata" aria-label="${esc(m.alt || label)}"></video>`;
+  } else if (isCode && String(m.code || '').trim()) {
+    media = `<iframe class="floater__media floater__media--code" style="aspect-ratio:${FLOAT_RATIOS[m.ratio] || FLOAT_RATIOS.landscape}" sandbox="allow-scripts" srcdoc="${esc(floaterCodeDoc(m.code))}" title="${esc(label)}" loading="lazy"></iframe>`;
+  } else if (m.type !== 'video' && !isCode && m.src) {
+    media = `<img class="floater__media" src="${esc(asset(m.src))}" alt="${esc(m.alt || '')}" loading="lazy" decoding="async">`;
+  }
+  const title = f.title ? `<p class="floater__title">${esc(f.title)}${f.url ? ARROW : ''}</p>` : '';
+  let inner = media + title;
+  if (f.url && !isCode) {
+    inner = `<a class="floater__link" ${linkAttrs(f.url)}${f.title ? '' : ` aria-label="${esc(label)}"`}>${media}${title}</a>`;
+  } else if (f.url) {
+    // Code: the graphic stays interactive, so only the title (or a corner arrow) is the link.
+    inner = media + (f.title
+      ? `<a class="floater__link" ${linkAttrs(f.url)}>${title}</a>`
+      : `<a class="floater__corner" ${linkAttrs(f.url)} aria-label="Open ${esc(label)}">${ARROW}</a>`);
+  }
+  return `<div class="floater" id="float-${i + 1}" data-pos="${esc(f.position || 'auto')}">${inner}</div>`;
 }
 
 /* ---------- case study page ---------- */

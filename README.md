@@ -59,10 +59,18 @@ The token never reaches the browser.
    - `CMS_PASSWORD`: the password you'll type to sign in. Make it long, e.g. four random words.
 3. **Redeploy** (Deployments → ⋯ on the latest → Redeploy) so the settings take effect.
 
-Optional settings: `CMS_REPO` (default `jamingalea/jamingalea-com`) and `CMS_BRANCH` (default `main`).
+Optional settings: `CMS_REPO` (default `jamingalea/jamingalea-com`) and `CMS_BRANCH`. Without `CMS_BRANCH`, the CMS publishes to the branch its deployment was built from on preview deployments (so the staging site's CMS publishes to `staging`), and to `main` on the live site.
 
 When the GitHub token expires, create a new one and replace `GITHUB_TOKEN` in Vercel.
 Until both settings exist, `/admin` shows a "not set up yet" page and nothing else.
+
+### Floating projects
+
+Small side projects shown as glass cards that float over the homepage (CMS → **Floating**). Each has an optional title, an optional link, and an image, a video (MP4 or WebM up to 3 MB, or a link to one) or a code snippet. Code snippets run in their own sealed-off frame, so they can't affect the rest of the page.
+
+On desktop, automatic placement puts the first card in the space between the two columns of projects, then alternates between the right column, the left column and the middle, each over a gap between projects. A card can also be set to a position. On tablets and phones each card sits between two projects.
+
+Floating projects can have a visitor card too, set up the same way as for projects (below).
 
 ### Visitor cards on side projects
 

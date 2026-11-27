@@ -320,3 +320,6 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .toggles .check .hint{font-weight:400}
 .toggles p.hint{margin:4px 0 0}
 .hint.warn{color:var(--warn)}
+
+/* Floating projects: video preview */
+.float-video{display:block;width:100%;max-width:280px;aspect-ratio:4/3;object-fit:cover;background:#1a1a1a;border-radius:8px;margin:8px 0}
