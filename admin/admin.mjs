@@ -1174,6 +1174,8 @@ function floatingFields(f) {
     : m.type === 'embed' ? [
       text('Page address', m, 'url', { type: 'url', placeholder: 'https://…', hint: 'A page made to be embedded, such as a 3D model or an interactive graphic. It loads directly, so it works with its own files and libraries. Keep its background transparent so the glass shows through.' }),
       select('Shape', m, 'ratio', [['landscape', 'Landscape (4:3)'], ['square', 'Square'], ['portrait', 'Portrait (3:4)'], ['wide', 'Wide (16:9)']]),
+      h('label.check', bind(m, 'breakout', h('input', { type: 'checkbox', checked: !!m.breakout })), 'Let it spill out of the card'),
+      h('small.hint', 'On desktop the page is drawn larger than the card, centred on it, so a 3D model can move beyond the card’s edges. Best for pages with a transparent background.'),
     ]
     : m.type === 'code' ? [
       area('Code', m, 'code', { plain: true, rows: 12, onInput: (v) => {

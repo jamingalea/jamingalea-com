@@ -208,12 +208,13 @@
   "caseStudies": [],
   "floating": [
     {
-      "title": "MODU Big Rocker",
+      "title": "MODU Toy Builder",
       "url": "https://modu.jamingalea.com/",
       "media": {
         "type": "embed",
-        "url": "https://modu.jamingalea.com/?embed=big-rocker&colour=orange",
-        "ratio": "landscape"
+        "url": "https://modu.jamingalea.com/?embed=t-rex&colour=orange",
+        "ratio": "landscape",
+        "breakout": true
       },
       "position": "auto"
     }

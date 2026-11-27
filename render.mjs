@@ -362,7 +362,12 @@ function floater(f, asset, i) {
   if (embedUrl && /^https:\/\//.test(embedUrl)) {
     // Another website, embedded directly. It keeps its own origin, so it can load its own files,
     // but it can't reach this page (different origin) or navigate it.
-    media = `<iframe class="floater__media floater__media--code" style="aspect-ratio:${ratio}" src="${esc(embedUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="fullscreen; xr-spatial-tracking" referrerpolicy="strict-origin-when-cross-origin" title="${esc(label)}" loading="lazy"></iframe>`;
+    const frame = (cls, style) => `<iframe class="floater__media floater__media--code${cls}"${style} src="${esc(embedUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="fullscreen; xr-spatial-tracking" referrerpolicy="strict-origin-when-cross-origin" title="${esc(label)}" loading="lazy"></iframe>`;
+    // Spill out: the page is drawn larger than the card (160%), centred on it, so a 3D model
+    // can move beyond the card's edges (desktop only; site.css).
+    media = m.breakout
+      ? `<div class="floater__stage" style="aspect-ratio:${ratio}">${frame(' floater__media--breakout', '')}</div>`
+      : frame('', ` style="aspect-ratio:${ratio}"`);
   } else if (m.type === 'video' && m.src) {
     media = `<video class="floater__media" src="${esc(asset(m.src))}" autoplay muted loop playsinline preload="metadata" aria-label="${esc(m.alt || label)}"></video>`;
   } else if (m.type === 'code' && String(m.code || '').trim()) {
