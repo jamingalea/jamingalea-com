@@ -105,7 +105,7 @@
   var rightCol = document.querySelector('.work__col--right');
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (work && rightCol && !still) {
-    var SPEED = 0.1, wide = window.matchMedia('(min-width: 1200px)'), pTick = false;
+    var SPEED = 0.2, wide = window.matchMedia('(min-width: 1200px)'), pTick = false;
     var lift = function () {
       pTick = false;
       if (!wide.matches) { rightCol.style.transform = ''; return; }
