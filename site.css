@@ -55,9 +55,9 @@ a:hover{opacity:.7}
 
 /* Work: two columns, large on the left, small (square) on the right */
 .work{padding:160px var(--gutter) 0}
-.work__col{display:flex;flex-direction:column;gap:120px}
+.work__col{display:flex;flex-direction:column;gap:240px} /* space between projects: 240 desktop, 180 tablet, 144 phone */
 .work__col--left{grid-column:1 / span 14}
-.work__col--right{grid-column:17 / span 8;margin-top:200px;will-change:transform}
+.work__col--right{grid-column:17 / span 8;margin-top:280px;will-change:transform}
 .project__media{display:block;background:#222;overflow:hidden}
 a.project__media:hover{opacity:1}
 a.project__media img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
@@ -134,7 +134,7 @@ a.project__media:hover img{transform:scale(1.02)}
 /* Projects: the image rises in first, then the title, text and tags just after. */
 .js .project.reveal{opacity:1;transform:none;transition:none}
 .js .project.reveal>*{opacity:0;transform:translateY(40px);transition:opacity .9s ease,transform 1s cubic-bezier(.2,.7,.2,1);transition-delay:var(--reveal-delay,0ms)}
-.js .project.reveal>.project__body{transition-delay:calc(var(--reveal-delay,0ms) + 120ms)}
+.js .project.reveal>.project__body{transition-delay:calc(var(--reveal-delay,0ms) + 320ms)} /* the text follows the image in */
 .js .project.reveal.is-in>*{opacity:1;transform:none}
 
 /* Tablet */
@@ -143,8 +143,9 @@ a.project__media:hover img{transform:scale(1.02)}
   .hero{display:flex;flex-direction:column;justify-content:flex-start;min-height:0;padding-top:200px;gap:var(--lh)} /* no longer fills the screen, so the gap below stays even */
   .hero__intro,.hero__bio{width:100%;max-width:730px}
   .work{display:block;padding-top:100px}
+  .work__col{gap:180px}
   .work__col--left .project__body{max-width:none}
-  .work__col--right{margin-top:120px;display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));gap:80px var(--grid-gap)}
+  .work__col--right{margin-top:180px;display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));gap:140px var(--grid-gap)}
   .work__col--right>.project{grid-column:span 4} /* two squares side by side, 4 of 8 columns each */
   .highlights{padding-top:120px}
   .footer{display:flex;flex-direction:column;gap:12px;padding:80px var(--gutter)}
@@ -156,7 +157,8 @@ a.project__media:hover img{transform:scale(1.02)}
   .hero{padding-top:160px}
   .hero__name{line-height:19px}
   .work{padding:64px 0 0}
-  .work__col--right{display:flex;margin-top:120px}
+  .work__col{gap:144px}
+  .work__col--right{display:flex;margin-top:144px}
   .project__body{padding:20px var(--gutter) 0}
   .project__text p+p{margin-top:12px}
   .highlights{padding-top:80px}
