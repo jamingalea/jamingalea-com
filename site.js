@@ -105,7 +105,7 @@
   var rightCol = document.querySelector('.work__col--right');
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (work && rightCol && !still) {
-    var SPEED = 0.1, wide = window.matchMedia('(min-width: 1200px)'), pTick = false;
+    var SPEED = 0.2, wide = window.matchMedia('(min-width: 1200px)'), pTick = false;
     var lift = function () {
       pTick = false;
       if (!wide.matches) { rightCol.style.transform = ''; return; }
@@ -157,14 +157,14 @@
     ticker.classList.add('is-running');
   }
 
-  // Hidden: press G to show or hide the 12-column layout grid. Ignored while
+  // Hidden: press G to show or hide the layout grid (24 / 8 / 4 columns). Ignored while
   // typing, and with Cmd/Ctrl/Alt. Stays on between pages for the visit.
   var gridOverlay = null, gridLabel = null;
   var describeGrid = function () {
     var cols = gridOverlay.querySelectorAll('.grid-overlay__col');
     var css = getComputedStyle(gridOverlay.firstChild);
     gridLabel.textContent = css.gridTemplateColumns.split(' ').length + ' columns · ' + Math.round(cols[0].getBoundingClientRect().width) + 'px wide · ' +
-      parseFloat(css.columnGap) + 'px gaps · ' + parseFloat(css.paddingLeft) + 'px margins  (G to hide)';
+      Math.round(parseFloat(css.columnGap)) + 'px gaps · ' + Math.round(parseFloat(css.paddingLeft)) + 'px margins  (G to hide)';
   };
   var showGrid = function (on) {
     if (on && !gridOverlay) {
@@ -173,7 +173,7 @@
       gridOverlay.setAttribute('aria-hidden', 'true');
       var inner = document.createElement('div');
       inner.className = 'grid-overlay__inner';
-      for (var c = 0; c < 12; c++) {
+      for (var c = 0; c < 24; c++) {
         var col = document.createElement('span');
         col.className = 'grid-overlay__col';
         inner.appendChild(col);
