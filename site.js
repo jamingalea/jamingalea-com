@@ -118,6 +118,85 @@
     lift();
   }
 
+  // Floating projects (glass cards). Desktop: the first sits in the space between the
+  // two columns of projects; the rest alternate (right column, left column, middle) unless
+  // the CMS sets a position. Each one sits over a gap between projects, further down the
+  // page than the one before, and drifts a little slower than the page as you scroll.
+  // Tablets and phones: each card goes between two projects in the flow instead.
+  var floatLayer = document.querySelector('.floaters');
+  if (floatLayer) {
+    var floaters = Array.prototype.slice.call(floatLayer.querySelectorAll('.floater'));
+    var FLOAT = still ? 0 : 0.25, flTick = false, desk = window.matchMedia('(min-width: 1200px)');
+    var colL = document.querySelector('.work__col--left'), colR = document.querySelector('.work__col--right');
+    var docTop = function (el) { var y = 0; while (el) { y += el.offsetTop; el = el.offsetParent; } return y; };
+    var docLeft = function (el) { var x = 0; while (el) { x += el.offsetLeft; el = el.offsetParent; } return x; };
+    var projectsIn = function (col) { return col ? Array.prototype.slice.call(col.children).filter(function (e) { return e.classList.contains('project'); }) : []; };
+    var gapsIn = function (col, side) {
+      var ps = projectsIn(col), out = [];
+      for (var i = 1; i < ps.length; i++) out.push({ y: (docTop(ps[i - 1]) + ps[i - 1].offsetHeight + docTop(ps[i])) / 2, side: side, key: side + i });
+      return out;
+    };
+    var floatMove = function () {
+      flTick = false;
+      if (!floatLayer.classList.contains('is-floating')) return;
+      var mid = window.scrollY + window.innerHeight / 2;
+      floaters.forEach(function (f) {
+        var c = parseFloat(f.style.top) + f.offsetHeight / 2;
+        f.style.transform = FLOAT ? 'translate3d(0,' + ((mid - c) * FLOAT).toFixed(1) + 'px,0)' : '';
+      });
+    };
+    var placeFloaters = function () {
+      if (!colL) return;
+      if (!desk.matches) {
+        // In the flow: card n goes after left-hand project n.
+        floatLayer.classList.remove('is-floating');
+        var ps = projectsIn(colL);
+        floaters.forEach(function (f, i) {
+          f.style.left = f.style.top = f.style.transform = '';
+          var after = ps[Math.min(i, ps.length - 1)];
+          if (after && after.nextElementSibling !== f) after.parentNode.insertBefore(f, after.nextElementSibling);
+        });
+        return;
+      }
+      floaters.forEach(function (f) { if (f.parentNode !== floatLayer) floatLayer.appendChild(f); });
+      floatLayer.classList.add('is-floating');
+      var L = gapsIn(colL, 'left'), R = gapsIn(colR, 'right');
+      var all = L.concat(R).sort(function (a, b) { return a.y - b.y; });
+      var lRight = docLeft(colL) + colL.offsetWidth;
+      var rLeft = colR ? docLeft(colR) : lRight;
+      var vw = document.documentElement.clientWidth, used = {}, lastBottom = -Infinity;
+      var cycle = ['middle', 'right', 'left'];
+      var end = docTop(colL) + colL.offsetHeight;
+      floaters.forEach(function (f, i) {
+        var pos = f.dataset.pos && f.dataset.pos !== 'auto' ? f.dataset.pos : cycle[i % 3];
+        var w = f.offsetWidth, h = f.offsetHeight;
+        var list = pos === 'left' ? L : pos === 'right' ? R : all;
+        var pick = null;
+        for (var k = 0; k < list.length && !pick; k++) if (!used[list[k].key] && list[k].y - h / 2 > lastBottom + 40) pick = list[k];
+        var y = pick ? pick.y : Math.max(end, lastBottom) + 160 + h / 2;
+        if (pick) used[pick.key] = true;
+        var x = pos === 'left' ? lRight - w : pos === 'right' ? rLeft : (lRight + rLeft) / 2 - w / 2;
+        x = Math.min(Math.max(x, 16), vw - w - 16);
+        f.style.left = Math.round(x) + 'px';
+        f.style.top = Math.round(y - h / 2) + 'px';
+        lastBottom = y + h / 2;
+      });
+      floatMove();
+    };
+    window.addEventListener('scroll', function () { if (!flTick) { flTick = true; requestAnimationFrame(floatMove); } }, { passive: true });
+    window.addEventListener('resize', placeFloaters);
+    window.addEventListener('load', placeFloaters);
+    if (document.fonts) document.fonts.ready.then(placeFloaters);
+    placeFloaters();
+    // Fade each card in when it comes into view.
+    if ('IntersectionObserver' in window) {
+      var fio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); fio.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      floaters.forEach(function (f) { fio.observe(f); });
+    } else floaters.forEach(function (f) { f.classList.add('is-in'); });
+  }
+
   // Reveal blocks as they enter the viewport, staggered: blocks that come into view
   // together appear one after another (top to bottom, then left to right), and a
   // quick scroll keeps the rhythm without making anything wait too long.

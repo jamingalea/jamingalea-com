@@ -1,7 +1,7 @@
 // Portfolio CMS — edits content.json, previews it live, and publishes
 // content.json + a regenerated index.html (+ any new images) to GitHub
 // in a single commit. Vercel redeploys on push.
-import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains, logoSize } from '/render.mjs';
+import { renderSite, renderCaseStudy, renderPages, migrate, isLive, caseStudyProblem, caseStudyTitle, projectOf, paragraphs, cardDomains, logoSize, iframeSrc } from '/render.mjs';
 import { richText } from '/admin/editor.mjs';
 
 /* ---------- small helpers ---------- */
@@ -194,6 +194,8 @@ function normalise(c) {
   migrate(c);
   c.highlights ||= { title: 'Other highlights', items: [] }; c.highlights.items ||= [];
   c.footer ||= { title: 'More information', links: [] }; c.footer.links ||= [];
+  c.floating ||= [];
+  for (const f of c.floating) f.media ||= { type: 'image', src: '' };
   for (const p of c.projects) { p.tags ||= []; p.column ||= 'left'; p.id ||= uniqueId(p.title, p); }
   for (const i of c.highlights.items) {
     // Highlights used to carry tags; the years are kept as their own field, the rest dropped.
@@ -248,7 +250,7 @@ function changed({ save = true } = {}) {
 
 /* ---------- preview ---------- */
 let previewTimer;
-const PREVIEW_HEAD = `<base target="_blank"><style>.js .reveal,.js .reveal>*{opacity:1!important;transform:none!important;transition:none!important}</style>`;
+const PREVIEW_HEAD = `<base target="_blank"><style>.js .reveal,.js .reveal>*{opacity:1!important;transform:none!important;transition:none!important}.js .floater{opacity:1!important;transition:none!important}</style>`;
 function assetUrl(p) {
   if (!p) return '';
   if (state.pending.has(p)) return state.pending.get(p).url;
@@ -300,6 +302,7 @@ function showPreviewPage(page) {
 const IMAGE_RULES = {
   project: { max: 2400, label: 'Project image' },
   icon: { max: 400, label: 'Icon' },
+  floating: { max: 1200, label: 'Image' },
   og: { max: 1200, jpeg: true, label: 'Social image' },
   favicon: { max: 256, png: true, label: 'Icon' },
 };
@@ -381,6 +384,19 @@ function logoSizeField(it) {
     reset);
 }
 
+// Floating project videos: kept small, because they publish through the same route as images.
+const VIDEO_MAX = 3 * 1024 * 1024;
+async function addVideo(file, nameHint) {
+  const ext = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' }[file.type];
+  if (!ext) throw new Error('Please choose an MP4 or WebM video.');
+  if (file.size > VIDEO_MAX) throw new Error(`That video is ${(file.size / 1048576).toFixed(1)} MB. Videos can be up to 3 MB: make it shorter or smaller, or upload it somewhere else and paste its link instead.`);
+  const rand = Math.random().toString(36).slice(2, 8);
+  const path = `media/${slugify(nameHint || file.name.replace(/\.[^.]+$/, ''))}-${rand}.${ext}`;
+  state.pending.set(path, { blob: file, url: URL.createObjectURL(file) });
+  await idb.put(path, file);
+  return path;
+}
+
 async function addImage(file, kind, nameHint) {
   const { blob, ext, w, h: hgt } = await processImage(file, kind);
   const rand = Math.random().toString(36).slice(2, 8);
@@ -452,7 +468,7 @@ function area(label, obj, key, opts = {}) {
   const ta = h('textarea', { rows: opts.rows || 6, placeholder: opts.placeholder }); ta.value = obj[key] ?? '';
   const count = opts.limit ? h('span.count') : null;
   const upd = () => { if (count) { const n = ta.value.length; count.textContent = `${n} / ${opts.limit}`; count.classList.toggle('over', n > opts.limit); } };
-  bind(obj, key, ta, { onInput: upd }); upd();
+  bind(obj, key, ta, { onInput: (v) => { upd(); opts.onInput?.(v); } }); upd();
   return h('label', h('span', label, count), ta,
     h('small', opts.hint ?? 'Leave a blank line between paragraphs. Add a link with [link text](https://…).'));
 }
@@ -1190,8 +1206,85 @@ function visitorCardSection(p) {
 }
 
 /* ---------- panels ---------- */
+const FLOAT_TYPES = [['image', 'Image'], ['video', 'Video'], ['embed', 'Web page'], ['code', 'Code snippet']];
+
+function videoField(m, nameHint) {
+  const file = h('input', { type: 'file', accept: 'video/mp4,video/webm,video/quicktime', hidden: true });
+  const pending = m.src && state.pending.has(m.src);
+  const link = h('input', { type: 'url', placeholder: 'https://… (an .mp4 or .webm file)', value: pending ? '' : (m.src || '') });
+  bind(m, 'src', link, { onInput: () => schedulePreview() });
+  const take = async (f) => {
+    if (!f) return;
+    try { m.src = await addVideo(f, nameHint()); changed(); renderPanel(); } catch (e) { toast(e.message || String(e)); }
+  };
+  file.addEventListener('change', () => { take(file.files[0]); file.value = ''; });
+  const wrap = h('div.field',
+    h('span.field__label', 'Video'),
+    m.src && h('video.float-video', { src: assetUrl(m.src), muted: true, autoplay: true, loop: true, playsInline: true }),
+    h('div.row',
+      h('button.btn.btn--sm', { type: 'button', onclick: () => file.click() }, m.src ? 'Replace…' : 'Upload…'),
+      m.src && h('button.btn.btn--sm.btn--ghost.btn--danger', { type: 'button', onclick: () => { m.src = ''; changed(); renderPanel(); } }, 'Remove')),
+    pending && h('small', 'New video (publish to upload)'),
+    h('label', h('span', 'Or paste a link to a video'), link),
+    h('small', 'MP4 or WebM, up to 3 MB to upload. It plays silently on a loop. For a longer video, upload it somewhere else and paste its link.'),
+    file);
+  wrap.addEventListener('dragover', (e) => { e.preventDefault(); wrap.classList.add('drop'); });
+  wrap.addEventListener('dragleave', () => wrap.classList.remove('drop'));
+  wrap.addEventListener('drop', (e) => { e.preventDefault(); wrap.classList.remove('drop'); take(e.dataTransfer.files[0]); });
+  return wrap;
+}
+
+function floatingFields(f) {
+  const m = f.media;
+  const name = () => f.title || 'floating';
+  const media = m.type === 'video' ? [videoField(m, name), text('Description', m, 'alt', { hint: 'Describes the video for screen readers.' })]
+    : m.type === 'embed' ? [
+      text('Page address', m, 'url', { placeholder: 'https://… or /embeds/…', hint: 'A page made to be embedded, such as a 3D model or an interactive graphic, on another site or on this one. It loads directly, so it works with its own files and libraries. Keep its background transparent so the glass shows through.' }),
+      h('label.check', bind(m, 'breakout', h('input', { type: 'checkbox', checked: !!m.breakout })), 'Let it spill out of the card'),
+      h('small.hint', 'On desktop the page is drawn larger than the card, centred on it, so a 3D model can move beyond the card’s edges. Best for pages with a transparent background.'),
+    ]
+    : m.type === 'code' ? [
+      area('Code', m, 'code', { plain: true, rows: 12, onInput: (v) => {
+        // A pasted <iframe> embed becomes a Web page, which can load the embedded site's own files.
+        const src = iframeSrc(v);
+        if (!src) return;
+        const t = (/\btitle\s*=\s*["']([^"']*)["']/i.exec(v) || [])[1];
+        f.media = { type: 'embed', url: src, ratio: m.ratio || 'landscape' };
+        if (!f.title && t) f.title = t;
+        changed(); renderPanel(); toast('That’s an embedded page, so it’s set up as a Web page.');
+      }, placeholder: '<canvas id="c"></canvas>\n<script>\n  // your graphic\n</script>', hint: 'HTML, CSS and JavaScript. It runs in its own sealed-off frame, so it can’t affect the rest of the page. To show another website (an <iframe> embed), use Web page instead: pasting an <iframe> here switches to it. Scripts can load libraries from a CDN (for example three.js). Keep the background transparent so the glass shows through.' }),
+    ]
+    : [imageField('Image', m, 'src', 'floating', { onChange: renderPanel, nameHint: name }), text('Image description', m, 'alt', { hint: 'For screen readers. Leave empty if it’s purely decorative.' })];
+  return [
+    text('Title', f, 'title', { placeholder: 'Optional' }),
+    text('Link', f, 'url', { type: 'url', placeholder: 'https://… (optional)' }),
+    select('Show', m, 'type', FLOAT_TYPES, () => { f.media = { type: m.type }; changed(); renderPanel(); }),
+    ...media,
+    select('Position', f, 'position', [['auto', 'Automatic'], ['middle', 'Between the two columns'], ['left', 'Left column'], ['right', 'Right column']]),
+    h('small.hint', 'On desktop each card floats over a gap between projects, further down the page than the one before. On tablets and phones it sits between two projects.'),
+    visitorCardSection(f),
+  ];
+}
+
 const panels = {
   analytics: analyticsPanel,
+  floating() {
+    const list = state.content.floating;
+    const typeLabel = (f) => (FLOAT_TYPES.find(([v]) => v === f.media?.type) || FLOAT_TYPES[0])[1];
+    return [
+      h('p.intro', 'Small side projects shown as glass cards that float over the homepage. Automatic placement puts the first one between the two columns of projects, then alternates between the right column, the left column and the middle.'),
+      h('div.list', list.map((f, i) => card(f, {
+        thumb: f.media?.type === 'image' ? f.media.src : '', kind: typeLabel(f), title: f.title || 'No title',
+        canUp: i > 0, canDown: i < list.length - 1,
+        onMove: (d) => move(list, i, i + d),
+        onDuplicate: () => { const copy = clone(f); if (copy.title) copy.title += ' (copy)'; list.splice(i + 1, 0, copy); state.open.add(copy); changed(); renderPanel(); },
+        onDelete: () => { list.splice(i, 1); changed(); renderPanel(); },
+        scrollId: `float-${list.filter((x, j) => j <= i && !x.hidden).length}`,
+        body: () => floatingFields(f),
+      }))),
+      h('button.btn.add', { type: 'button', onclick: () => { const f = { title: '', url: '', media: { type: 'image', src: '', alt: '' }, position: 'auto' }; list.push(f); state.open.add(f); changed(); renderPanel(); } }, '+ Add floating project'),
+    ];
+  },
   projects() {
     const c = state.content;
     const list = c.projects;
@@ -1397,6 +1490,7 @@ function summarise() {
   for (const [k, x] of ca) if (!cb.has(k)) out.push(`Removed case study “${caseStudyTitle(a, x)}”`);
   if (JSON.stringify(a.intro) !== JSON.stringify(b.intro)) out.push('Edited intro');
   if (JSON.stringify(a.highlights) !== JSON.stringify(b.highlights)) out.push('Edited highlights');
+  if (JSON.stringify(a.floating || []) !== JSON.stringify(b.floating || [])) out.push('Edited floating projects');
   if (JSON.stringify(a.footer) !== JSON.stringify(b.footer)) out.push('Edited footer');
   if (JSON.stringify(a.site) !== JSON.stringify(b.site)) out.push('Updated settings & SEO');
   const imgs = referencedPaths(b).length;

@@ -122,6 +122,33 @@ a.project__media:hover img{transform:scale(1.02)}
   .work__col--left .project__body,.hero__intro,.footer .section-title,.highlights .section-title,.hl-list{margin-left:calc(-1 * var(--gutter))}
 }
 
+/* Floating projects: square glass cards (blurred backdrop, no stroke, square corners, no shadow).
+   The graphic fills the card above the title.
+   site.js places them: on desktop over the gaps between projects, floating as you scroll;
+   on tablets and phones between projects in the flow. Without JS they sit in a row after the work. */
+.floaters{display:flex;flex-wrap:wrap;justify-content:center;gap:40px;max-width:var(--page-max);margin:0 auto;padding:120px var(--gutter) 0}
+.floaters.is-floating{position:absolute;top:0;left:0;width:0;height:0;padding:0;margin:0;display:block;z-index:5}
+.floaters.is-floating .floater{position:absolute}
+.floater{position:relative;flex:none;width:380px;max-width:calc(100vw - 2 * var(--gutter));padding:32px;aspect-ratio:1;display:flex;flex-direction:column;background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.floater{background:rgba(32,32,32,.94)}}
+.floater__link{display:block}
+.floater__link--card{flex:1;min-height:0;display:flex;flex-direction:column}
+.floater__link:hover{opacity:1}
+.floater__link:hover .floater__title{opacity:.7}
+.floater__media{display:block;width:100%;height:auto;border:0;background:#222;flex:1;min-height:0;object-fit:cover;aspect-ratio:auto!important}
+.floater__media--code{background:transparent}
+.floater__stage{position:relative;flex:1;min-height:0;aspect-ratio:auto!important}
+.floater__stage .floater__media{position:absolute;inset:0;width:100%;height:100%}
+@media (min-width:1200px){
+  .floater__stage .floater__media--breakout{inset:auto;left:50%;top:50%;width:160%;height:auto;aspect-ratio:1!important;transform:translate(-50%,-50%)}
+}
+.floater__title{flex:none;padding-top:20px;transition:opacity .2s}
+.floater__corner{position:absolute;right:40px;bottom:40px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(26,26,26,.6)}
+.floater__corner .arrow{margin:0}
+.work__col>.floater{align-self:center} /* tablets and phones: between projects, centred */
+.js .floater{opacity:0;transition:opacity .9s ease}
+.js .floater.is-in{opacity:1}
+
 /* Homepage load sequence (site.js).
    1: the intro fades in and rises into place; where it stacks (tablet, phone) it starts
       in the middle of the screen (--intro-shift). 2: a short pause.
@@ -131,12 +158,12 @@ a.project__media:hover img{transform:scale(1.02)}
 .intro-seq .hero__bio p{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
 .hero__bio p:nth-child(2){--p:.1s}.hero__bio p:nth-child(3){--p:.2s}.hero__bio p:nth-child(4){--p:.3s}.hero__bio p:nth-child(5){--p:.4s}.hero__bio p:nth-child(n+6){--p:.5s}
 .intro-seq .work{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 64px))}
-.intro-seq .highlights,.intro-seq .footer{opacity:0}
+.intro-seq .highlights,.intro-seq .footer,.intro-seq .floaters{opacity:0}
 .intro-seq.intro-in .hero__intro{opacity:1;transform:translateY(var(--intro-shift,0px));transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.7,.2,1)}
 .intro-seq.intro-done .hero__intro{opacity:1;transform:none;transition:opacity .4s ease,transform 1.1s cubic-bezier(.65,0,.35,1)}
 .intro-seq.intro-done .hero__bio p{opacity:1;transform:none;transition:opacity .9s ease calc(.15s + var(--p,0s)),transform 1.1s cubic-bezier(.45,0,.2,1) calc(.12s + var(--p,0s))}
 .intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .6s,transform 1.2s cubic-bezier(.45,0,.2,1) .5s}
-.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer{opacity:1;transition:opacity .9s ease .75s}
+.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer,.intro-seq.intro-done .floaters{opacity:1;transition:opacity .9s ease .75s}
 
 /* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
    enter together appear one after another. */
@@ -240,5 +267,5 @@ a.project__media:hover img{transform:scale(1.02)}
 .grid-overlay__label{position:fixed;left:12px;bottom:12px;padding:6px 9px;border-radius:6px;background:rgba(0,0,0,.72);color:#ff7a7a;font:12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;max-width:calc(100vw - 24px)}
 
 @media (prefers-reduced-motion:reduce){
-  .js .reveal,.js .project.reveal>*{opacity:1;transform:none;transition:none}
+  .js .reveal,.js .project.reveal>*,.js .floater{opacity:1;transform:none;transition:none}
 }

@@ -198,5 +198,28 @@
       }
     ]
   },
-  "caseStudies": []
+  "caseStudies": [],
+  "floating": [
+    {
+      "title": "MODU Toy Builder",
+      "url": "https://modu.jamingalea.com/",
+      "media": {
+        "type": "embed",
+        "url": "https://modu.jamingalea.com/?embed=t-rex&colour=orange&frame=centred",
+        "ratio": "landscape",
+        "breakout": true
+      },
+      "position": "auto"
+    },
+    {
+      "title": "Books About Food",
+      "url": "https://booksabout.food/",
+      "media": {
+        "type": "embed",
+        "url": "/embeds/baf-sphere.html?size=180",
+        "ratio": "landscape"
+      },
+      "position": "middle"
+    }
+  ]
 }

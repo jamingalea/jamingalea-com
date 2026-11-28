@@ -6,7 +6,9 @@
 //   CMS_PASSWORD   the password for /admin                         (required)
 //   GITHUB_TOKEN   fine-grained token, Contents: Read and write    (required)
 //   CMS_REPO       owner/repo to publish to   (default jamingalea/jamingalea-com)
-//   CMS_BRANCH     branch Vercel deploys from (default main)
+//   CMS_BRANCH     branch to publish to. Default: the branch this deployment was built
+//                  from on preview deployments (so the staging CMS publishes to staging),
+//                  otherwise main
 import { next } from '@vercel/functions';
 
 export const config = { matcher: ['/admin', '/admin/:path*'] };
@@ -105,7 +107,9 @@ async function api(request, url, token) {
   // Requests must come from the CMS page itself (a custom header can't be sent cross-site without permission).
   if (request.headers.get('x-cms') !== '1') return json({ message: 'Forbidden' }, 403);
   const repo = process.env.CMS_REPO || 'jamingalea/jamingalea-com';
-  const branch = process.env.CMS_BRANCH || 'main';
+  const branch = process.env.CMS_BRANCH
+    || (process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_GIT_COMMIT_REF)
+    || 'main';
 
   if (url.pathname === '/admin/api/analytics') return analytics(url);
 

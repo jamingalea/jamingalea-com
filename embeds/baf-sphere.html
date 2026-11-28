@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Books About Food sphere</title>
+<!-- The Books About Food sphere on a transparent page, for showing in a floating card.
+     ?size=<px> sets the sphere's width (default 180). -->
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  body { display: grid; place-items: center; }
+  baf-sphere { width: var(--size, 180px); max-width: 100%; }
+</style>
+<script type="module" src="./baf-sphere.js"></script>
+</head>
+<body>
+<baf-sphere></baf-sphere>
+<script>
+  var s = new URLSearchParams(location.search).get('size');
+  if (s && /^\d{2,4}$/.test(s)) document.documentElement.style.setProperty('--size', s + 'px');
+</script>
+</body>
+</html>
