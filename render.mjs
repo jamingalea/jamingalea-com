@@ -378,7 +378,7 @@ function floater(f, asset, i) {
   const title = f.title ? `<p class="floater__title">${esc(f.title)}${f.url ? ARROW : ''}</p>` : '';
   let inner = media + title;
   if (f.url && !isCode) {
-    inner = `<a class="floater__link" ${linkAttrs(f.url)}${f.title ? '' : ` aria-label="${esc(label)}"`}>${media}${title}</a>`;
+    inner = `<a class="floater__link floater__link--card" ${linkAttrs(f.url)}${f.title ? '' : ` aria-label="${esc(label)}"`}>${media}${title}</a>`;
   } else if (f.url) {
     // Code: the graphic stays interactive, so only the title (or a corner arrow) is the link.
     inner = media + (f.title

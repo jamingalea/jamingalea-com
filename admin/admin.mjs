@@ -1173,7 +1173,6 @@ function floatingFields(f) {
   const media = m.type === 'video' ? [videoField(m, name), text('Description', m, 'alt', { hint: 'Describes the video for screen readers.' })]
     : m.type === 'embed' ? [
       text('Page address', m, 'url', { placeholder: 'https://… or /embeds/…', hint: 'A page made to be embedded, such as a 3D model or an interactive graphic, on another site or on this one. It loads directly, so it works with its own files and libraries. Keep its background transparent so the glass shows through.' }),
-      select('Shape', m, 'ratio', [['landscape', 'Landscape (4:3)'], ['square', 'Square'], ['portrait', 'Portrait (3:4)'], ['wide', 'Wide (16:9)']]),
       h('label.check', bind(m, 'breakout', h('input', { type: 'checkbox', checked: !!m.breakout })), 'Let it spill out of the card'),
       h('small.hint', 'On desktop the page is drawn larger than the card, centred on it, so a 3D model can move beyond the card’s edges. Best for pages with a transparent background.'),
     ]
@@ -1187,7 +1186,6 @@ function floatingFields(f) {
         if (!f.title && t) f.title = t;
         changed(); renderPanel(); toast('That’s an embedded page, so it’s set up as a Web page.');
       }, placeholder: '<canvas id="c"></canvas>\n<script>\n  // your graphic\n</script>', hint: 'HTML, CSS and JavaScript. It runs in its own sealed-off frame, so it can’t affect the rest of the page. To show another website (an <iframe> embed), use Web page instead: pasting an <iframe> here switches to it. Scripts can load libraries from a CDN (for example three.js). Keep the background transparent so the glass shows through.' }),
-      select('Shape', m, 'ratio', [['landscape', 'Landscape (4:3)'], ['square', 'Square'], ['portrait', 'Portrait (3:4)'], ['wide', 'Wide (16:9)']]),
     ]
     : [imageField('Image', m, 'src', 'floating', { onChange: renderPanel, nameHint: name }), text('Image description', m, 'alt', { hint: 'For screen readers. Leave empty if it’s purely decorative.' })];
   return [
