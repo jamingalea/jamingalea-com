@@ -222,11 +222,11 @@
       "title": "Books About Food",
       "url": "https://booksabout.food/",
       "media": {
-        "type": "code",
-        "code": "<script type=\"module\" src=\"/embeds/baf-sphere.js\"></script>\n<baf-sphere style=\"width:100%\"></baf-sphere>",
-        "ratio": "square"
+        "type": "embed",
+        "url": "/embeds/baf-sphere.html?size=180",
+        "ratio": "landscape"
       },
-      "position": "auto"
+      "position": "middle"
     }
   ]
 }

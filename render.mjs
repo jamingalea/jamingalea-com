@@ -359,7 +359,7 @@ function floater(f, asset, i) {
   const isCode = m.type === 'code' || m.type === 'embed';
   const ratio = FLOAT_RATIOS[m.ratio] || FLOAT_RATIOS.landscape;
   let media = '';
-  if (embedUrl && /^https:\/\//.test(embedUrl)) {
+  if (embedUrl && /^(https:\/\/|\/(?!\/))/.test(embedUrl)) { // another site, or a page on this one (/embeds/…)
     // Another website, embedded directly. It keeps its own origin, so it can load its own files,
     // but it can't reach this page (different origin) or navigate it.
     const frame = (cls, style) => `<iframe class="floater__media floater__media--code${cls}"${style} src="${esc(embedUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="fullscreen; xr-spatial-tracking" referrerpolicy="strict-origin-when-cross-origin" title="${esc(label)}" loading="lazy"></iframe>`;
