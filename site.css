@@ -133,7 +133,7 @@ a.project__media:hover img{transform:scale(1.02)}
 .floater__stage{position:relative}
 .floater__stage .floater__media{position:absolute;inset:0;width:100%;height:100%}
 @media (min-width:1200px){
-  .floater__stage .floater__media--breakout{inset:auto;left:50%;top:50%;width:160%;height:auto;aspect-ratio:1;transform:translate(-50%,-50%)}
+  .floater__stage .floater__media--breakout{inset:auto;left:50%;top:50%;width:160%;height:auto;aspect-ratio:1;transform:translate(-50%,-55%)} /* idle model sits a little above centre, clear of the title */
 }
 .floater__title{padding-top:16px;transition:opacity .2s}
 .floater__corner{position:absolute;right:32px;bottom:32px;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:rgba(26,26,26,.6)}
