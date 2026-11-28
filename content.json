@@ -212,9 +212,19 @@
       "url": "https://modu.jamingalea.com/",
       "media": {
         "type": "embed",
-        "url": "https://modu.jamingalea.com/?embed=t-rex&colour=orange",
+        "url": "https://modu.jamingalea.com/?embed=t-rex&colour=orange&frame=centred",
         "ratio": "landscape",
         "breakout": true
+      },
+      "position": "auto"
+    },
+    {
+      "title": "Books About Food",
+      "url": "https://booksabout.food/",
+      "media": {
+        "type": "code",
+        "code": "<script type=\"module\" src=\"/embeds/baf-sphere.js\"></script>\n<baf-sphere style=\"width:100%\"></baf-sphere>",
+        "ratio": "square"
       },
       "position": "auto"
     }
