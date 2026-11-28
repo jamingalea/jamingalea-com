@@ -223,19 +223,6 @@
     items.forEach(function (el) { el.classList.add('is-in'); });
   }
 
-  // Endless ticker: duplicate the highlights once so the loop is seamless.
-  var ticker = document.querySelector('.ticker');
-  if (ticker && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    var track = ticker.querySelector('.ticker__track');
-    Array.prototype.slice.call(track.children).forEach(function (li) {
-      var copy = li.cloneNode(true);
-      copy.setAttribute('aria-hidden', 'true');
-      copy.querySelectorAll('a').forEach(function (a) { a.tabIndex = -1; });
-      track.appendChild(copy);
-    });
-    ticker.classList.add('is-running');
-  }
-
   // Hidden: press G to show or hide the layout grid (24 / 8 / 4 columns). Ignored while
   // typing, and with Cmd/Ctrl/Alt. Stays on between pages for the visit.
   var gridOverlay = null, gridLabel = null;

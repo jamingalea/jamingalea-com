@@ -236,6 +236,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--focus);outline:none;b
 .imgfield{display:flex;gap:20px;align-items:center;margin-bottom:24px}
 .imgfield__preview{width:140px;height:105px;border-radius:8px;background:var(--chip) center/cover no-repeat;flex:none;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:12px}
 .imgfield__preview.contain{background-size:contain;background-color:#1a1a1a;background-origin:content-box;padding:10px}
+/* Highlight logo: shown at its real size in the site's shape, with a size nudge */
+.logo-size{display:flex;gap:20px;align-items:center;margin:-8px 0 24px}
+.logo-size__chip{flex:none;width:140px;height:72px;border-radius:8px;background:#1a1a1a;display:grid;place-items:center}
+.logo-size__shape{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.07);display:flex;align-items:center;justify-content:center}
+.logo-size__shape img{display:block;max-width:22px;max-height:18px}
+.logo-size__shape img[style*="width"]{max-width:none;max-height:none}
+.logo-size label{flex:1;margin:0}
+.logo-size input[type=range]{width:100%;accent-color:var(--accent);padding:0}
 .imgfield__side{display:flex;flex-direction:column;gap:8px;min-width:0}
 .imgfield__label{font-weight:500}
 .imgfield__path{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

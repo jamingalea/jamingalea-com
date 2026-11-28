@@ -27,8 +27,8 @@
   --lh-small:24px;
 }
 *,*::before,*::after{box-sizing:border-box}
-/* Page width: sections stop growing at --page-max (1920px) and sit centred (the highlights row is left full width) */
-.hero,.work,.footer,.cs-nav,.cs main{max-width:var(--page-max);margin-left:auto;margin-right:auto}
+/* Page width: sections stop growing at --page-max (1920px) and sit centred */
+.hero,.work,.highlights,.footer,.cs-nav,.cs main{max-width:var(--page-max);margin-left:auto;margin-right:auto}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:300 var(--fs)/var(--lh) Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 h1,h2,h3,p,ul{margin:0;padding:0;font:inherit}
@@ -45,7 +45,7 @@ a:hover{opacity:.7}
    the right side (About text, square projects, footer links) ends at column 24. As the screen gets wider,
    each side spans fewer columns (see "Wider screens" below), so images and lines of text stay about the
    same size and the extra width becomes space between the two sides. */
-.hero,.work,.footer{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
+.hero,.work,.highlights,.footer{display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));column-gap:var(--grid-gap);align-items:start}
 .hero{min-height:100vh;min-height:100svh;padding:44vh var(--gutter) 0}
 .hero__intro{grid-column:1 / span 12;max-width:591px}
 .hero__name{line-height:22px;margin-bottom:4px}
@@ -68,29 +68,32 @@ a.project__media:hover img{transform:scale(1.02)}
 .project__body{padding-top:40px}
 .work__col--left .project__body{max-width:490px}
 .project__title{margin-bottom:12px}
-.project__text,.highlight__text{color:var(--muted)}
+.project__text{color:var(--muted)}
 .project__text p+p{margin-top:13px}
-.project__text a,.highlight__text a,.hero__tagline a{color:var(--fg)}
+.project__text a,.hero__tagline a{color:var(--fg)}
 
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
 .tag{position:relative;font-size:var(--fs-small);line-height:26px;padding:4px 10px;border-radius:10px;color:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
 .tag--highlight{color:#4f9b30;box-shadow:inset 0 0 0 1px var(--green);color:var(--green);filter:brightness(1.55)}
 
-/* Other highlights: an endless ticker (site.js duplicates the items) */
-.highlights{padding-top:120px}
+/* Other highlights: a list as wide as the left column of projects (same columns, stepping down on
+   wider screens), on the same grid: logo, name and years on the left, description on the right */
+.highlights{padding:120px var(--gutter) 0}
 .section-title{color:var(--muted);line-height:22px}
-.highlights .section-title{padding:0 var(--gutter);margin-bottom:40px}
-.ticker{overflow-x:auto;scrollbar-width:none}
-.ticker::-webkit-scrollbar{display:none}
-.ticker__track{display:flex;gap:40px;padding:0 var(--gutter);width:max-content}
-.ticker.is-running{overflow:hidden}
-.ticker.is-running .ticker__track{padding-right:0;animation:ticker calc(var(--count) * 9s) linear infinite}
-.ticker.is-running:hover .ticker__track{animation-play-state:paused}
-@keyframes ticker{to{transform:translateX(calc(-50% - 20px))}}
-.highlight{width:340px;flex:none;font-size:var(--fs-small);line-height:var(--lh-small)}
-.highlight__icon{height:50px;width:auto;margin-bottom:40px}
-.highlight__title{margin-bottom:12px}
-.highlight .tags{margin-top:12px}
+.highlights .section-title{grid-column:1 / -1;margin-bottom:32px}
+:root{--hl-cols:14} /* columns the list spans: matches the left column of projects */
+.hl-list{grid-column:1 / span var(--hl-cols);list-style:none;margin:0;padding:0}
+.hl{--hl-logo:calc(var(--lh) + 22px);display:grid;grid-template-columns:repeat(var(--hl-cols),minmax(0,1fr));column-gap:var(--grid-gap);padding:28px 0;border-top:1px solid rgba(255,255,255,.1)}
+.hl:last-child{border-bottom:1px solid rgba(255,255,255,.1)}
+.hl__name{grid-column:1 / span 6;display:flex;gap:16px;align-items:flex-start;min-width:0}
+.hl__logo{flex:none;display:flex;align-items:center;justify-content:center;width:var(--hl-logo);height:var(--hl-logo);border-radius:12px;background:rgba(255,255,255,.07)}
+.hl__logo img{display:block;max-width:22px;max-height:18px;object-fit:contain} /* until a logo is measured */
+.hl__logo img[style]{max-width:none;max-height:none}
+.hl__title{font-weight:inherit}
+.hl__years{margin-top:2px;color:var(--muted);font-size:14px;line-height:20px}
+.hl__text{grid-column:7 / -1;padding-top:1px;color:var(--muted);font-size:var(--fs-small);line-height:var(--lh-small)}
+.hl__text p+p{margin-top:12px}
+.hl__text a{color:var(--fg)}
 
 .footer{padding:200px var(--gutter)}
 .footer .section-title{grid-column:1 / span 16}
@@ -104,17 +107,19 @@ a.project__media:hover img{transform:scale(1.02)}
   .work__col--right .project__media{margin-right:calc(-1 * var(--gutter))}
 }
 @media (min-width:1600px){
+  :root{--hl-cols:13}
   .work__col--left{grid-column:1 / span 13}
   .work__col--right,.hero__bio,.footer__links{grid-column:18 / span 7}
 }
 @media (min-width:1800px){
+  :root{--hl-cols:12}
   .work__col--left{grid-column:1 / span 12}
   .work__col--right,.hero__bio,.footer__links{grid-column:19 / span 6}
 }
 /* Past 1920px the images no longer reach the screen edge, so the text under the left-hand
    images, the intro and the footer title line up with the images' left edge instead of the grid margin */
 @media (min-width:1921px){
-  .work__col--left .project__body,.hero__intro,.footer .section-title{margin-left:calc(-1 * var(--gutter))}
+  .work__col--left .project__body,.hero__intro,.footer .section-title,.highlights .section-title,.hl-list{margin-left:calc(-1 * var(--gutter))}
 }
 
 /* Floating projects: square glass cards (blurred backdrop, no stroke, square corners, no shadow).
@@ -150,14 +155,15 @@ a.project__media:hover img{transform:scale(1.02)}
    3: the About text, then the projects, load in the same way, each starting a little lower
       and a little later, so on stacked layouts they follow the intro up rather than meet it. */
 .intro-seq .hero__intro{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 16px))}
-.intro-seq .hero__bio{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
+.intro-seq .hero__bio p{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 40px))}
+.hero__bio p:nth-child(2){--p:.1s}.hero__bio p:nth-child(3){--p:.2s}.hero__bio p:nth-child(4){--p:.3s}.hero__bio p:nth-child(5){--p:.4s}.hero__bio p:nth-child(n+6){--p:.5s}
 .intro-seq .work{opacity:0;transform:translateY(calc(var(--intro-shift,0px) + 64px))}
 .intro-seq .highlights,.intro-seq .footer,.intro-seq .floaters{opacity:0}
 .intro-seq.intro-in .hero__intro{opacity:1;transform:translateY(var(--intro-shift,0px));transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.7,.2,1)}
 .intro-seq.intro-done .hero__intro{opacity:1;transform:none;transition:opacity .4s ease,transform 1.1s cubic-bezier(.65,0,.35,1)}
-.intro-seq.intro-done .hero__bio{opacity:1;transform:none;transition:opacity .9s ease .15s,transform 1.1s cubic-bezier(.45,0,.2,1) .12s}
-.intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .45s,transform 1.2s cubic-bezier(.45,0,.2,1) .35s}
-.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer,.intro-seq.intro-done .floaters{opacity:1;transition:opacity .9s ease .6s}
+.intro-seq.intro-done .hero__bio p{opacity:1;transform:none;transition:opacity .9s ease calc(.15s + var(--p,0s)),transform 1.1s cubic-bezier(.45,0,.2,1) calc(.12s + var(--p,0s))}
+.intro-seq.intro-done .work{opacity:1;transform:none;transition:opacity .9s ease .6s,transform 1.2s cubic-bezier(.45,0,.2,1) .5s}
+.intro-seq.intro-done .highlights,.intro-seq.intro-done .footer,.intro-seq.intro-done .floaters{opacity:1;transition:opacity .9s ease .75s}
 
 /* Scroll reveal (only when JS runs). site.js sets --reveal-delay so blocks that
    enter together appear one after another. */
@@ -179,7 +185,9 @@ a.project__media:hover img{transform:scale(1.02)}
   .work__col--left .project__body{max-width:none}
   .work__col--right{margin-top:180px;display:grid;grid-template-columns:repeat(var(--grid-cols),minmax(0,1fr));gap:140px var(--grid-gap)}
   .work__col--right>.project{grid-column:span 4} /* two squares side by side, 4 of 8 columns each */
-  .highlights{padding-top:120px}
+  :root{--hl-cols:8}
+  .hl__name{grid-column:1 / span 3}
+  .hl__text{grid-column:4 / -1}
   .footer{display:flex;flex-direction:column;gap:12px;padding:80px var(--gutter)}
 }
 
@@ -194,7 +202,11 @@ a.project__media:hover img{transform:scale(1.02)}
   .project__body{padding:20px var(--gutter) 0}
   .project__text p+p{margin-top:12px}
   .highlights{padding-top:80px}
-  .highlights .section-title{margin-bottom:30px}
+  .highlights .section-title{margin-bottom:24px}
+  :root{--hl-cols:4}
+  .hl{padding:24px 0}
+  .hl__name{grid-column:1 / -1}
+  .hl__text{grid-column:1 / -1;padding-top:16px}
   .footer{padding:80px var(--gutter)}
 }
 
@@ -256,6 +268,4 @@ a.project__media:hover img{transform:scale(1.02)}
 
 @media (prefers-reduced-motion:reduce){
   .js .reveal,.js .project.reveal>*,.js .floater{opacity:1;transform:none;transition:none}
-  .ticker.is-running .ticker__track{animation:none}
-  .ticker.is-running{overflow-x:auto}
 }

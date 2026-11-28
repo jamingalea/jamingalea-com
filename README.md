@@ -7,7 +7,8 @@ A static portfolio site. All its words, images and settings live in
 
 Open **https://jamingalea.com/admin/**. From there you can:
 
-- edit the intro text, every project, the “Other highlights” row and the footer links
+- edit the intro text, every project, the “Other highlights” list and the footer links
+- upload highlight logos: empty space around them is trimmed and each is sized to look as big as the others (a “Logo size” slider nudges any that still look off)
 - add, duplicate, reorder, hide or delete projects and highlights
 - upload or replace images (large images are resized automatically)
 - set a focal point on project images (**Adjust crop…**): click the part that must stay in

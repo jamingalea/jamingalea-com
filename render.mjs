@@ -285,11 +285,30 @@ function project(p, asset, c) {
   return `<article class="project reveal"${id}>${img}<div class="project__body">${title(p.title, href, 'project__title', cs ? ARROW_RIGHT : ARROW)}<div class="project__text">${paragraphs(p.text)}</div>${tags(p.tags)}</div></article>`;
 }
 
+/* Logos in the highlights list are sized by eye rather than by box: each covers about
+   the same area, nudged by how solid it is (a light outline grows a little, a solid
+   shape shrinks a little), so they all feel the same size. iconMeta {w, h, ink} is
+   measured when the logo is uploaded; iconScale is the CMS "Logo size" nudge. */
+export function logoSize(h) {
+  const m = h.iconMeta;
+  if (!m || !(m.w > 0) || !(m.h > 0)) return null;
+  const ink = Math.min(Math.max(+m.ink || 0.5, 0.1), 1);
+  const s = Math.sqrt((17 * 17) / (m.w * m.h) * Math.sqrt(0.5 / ink));
+  let w = m.w * s, hgt = m.h * s;
+  const fit = Math.min(1, 26 / w, 24 / hgt);
+  const nudge = Math.min(Math.max(+h.iconScale || 1, 0.5), 1.5);
+  w *= fit * nudge; hgt *= fit * nudge;
+  const cap = Math.min(1, 34 / w, 34 / hgt); // stay well inside the square
+  return { w: +(w * cap).toFixed(1), h: +(hgt * cap).toFixed(1) };
+}
+
 function highlight(h, asset) {
-  const icon = h.icon
-    ? `<img class="highlight__icon" src="${esc(asset(h.icon))}" alt="" loading="lazy">`
-    : '';
-  return `<li class="highlight">${icon}${title(h.title, h.url, 'highlight__title')}<div class="highlight__text">${paragraphs(h.text)}</div>${tags(h.tags)}</li>`;
+  const size = logoSize(h);
+  const logo = h.icon
+    ? `<span class="hl__logo"><img src="${esc(asset(h.icon))}" alt=""${size ? ` style="width:${size.w}px;height:${size.h}px"` : ''} loading="lazy"></span>`
+    : '<span class="hl__logo"></span>';
+  const years = String(h.years || '').trim();
+  return `<li class="hl reveal"><div class="hl__name">${logo}<div>${title(h.title, h.url, 'hl__title')}${years ? `<p class="hl__years">${esc(years)}</p>` : ''}</div></div><div class="hl__text">${paragraphs(h.text)}</div></li>`;
 }
 
 /**
@@ -325,9 +344,9 @@ export function renderSite(c, opts = {}) {
     <div class="work__col work__col--right">${right.map((p) => project(p, asset, c)).join('')}</div>
   </section>
   ${floats.length ? `<div class="floaters" aria-label="Side projects">${floats.join('')}</div>` : ''}
-  ${hlItems.length ? `<section class="highlights reveal" aria-label="${esc(hl.title || 'Highlights')}">
-    <h2 class="section-title">${esc(hl.title)}</h2>
-    <div class="ticker"><ul class="ticker__track" style="--count:${hlItems.length}">${hlItems.map((h) => highlight(h, asset)).join('')}</ul></div>
+  ${hlItems.length ? `<section class="highlights" aria-label="${esc(hl.title || 'Highlights')}">
+    <h2 class="section-title reveal">${esc(hl.title)}</h2>
+    <ul class="hl-list">${hlItems.map((h) => highlight(h, asset)).join('')}</ul>
   </section>` : ''}
 </main>
 ${footer(c)}`;
